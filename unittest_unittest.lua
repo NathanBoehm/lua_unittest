@@ -7,8 +7,11 @@
 --
 -- Created by Nathan Boehm, 2019
 
---dofile("C:/Users/Nathan_Boehm/Documents/source/Lua/unittest_unittest.lua")
-package.path = "C:/Users/Nathan_Boehm/Documents/source/Lua/?.lua"
+--dofile("C:/Users/Nathan_Boehm/source/repos/lua_unittest/unittest_unittest.lua")
+package.path = "C:/Users/Nathan_Boehm/source/repos/lua_unittest/?.lua"
+
+--[[TODO: standardize test names
+          consolodate multiple 'failing' tests into single tests where it makes sense--]]
 
 require 'unittest'
 load_modules()
@@ -178,7 +181,6 @@ end
 
 --
 --expect_lt
-test_group = "expect_lt"
 tests["expect_lt_passing"] = function ()
     expect_lt(4,5)
     expect_lt(0,1)
@@ -670,6 +672,50 @@ tests["containstable_failing_badtypes4"] = function ()
     expect_failure(f)
 end
 
+--]]
+
+--
+--close
+tests["close_passing"] = function ()
+    expect_close(0.9, 1, 0.2)
+    expect_close(0.2, 1, 0.8)
+    expect_close(-1, -2, 0.5)
+    expect_close(-1, -2, -0.5)
+    expect_close(0.2, 1, -0.8)
+    expect_close(0.9, 1, -0.2)
+    expect_close(1050, 1000, 0.06)
+    expect_close(10, 9, 0.15)
+    expect_close(11, 10, 0.1)
+end
+
+tests["close_failing_badtype"] = function ()
+    local function f1() expect_close(1,2,"2") end
+    local function f2() expect_close(1,"2",2) end
+    local function f3() expect_close("1",2,2) end
+    local function f4() expect_close(1,2,true) end
+    local function f5() expect_close(1,2,{}) end
+    local function f6() expect_close(1,2,f1) end
+
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+    expect_failure(f4)
+    expect_failure(f5)
+    expect_failure(f6)
+end
+
+tests["close_failing"] = function ()
+    local function f1() expect_close(0.9, 1, 0.01) end
+    local function f2() expect_close(-5, -2, 1) end
+    local function f3() expect_close(0.01, 0, 1000) end
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+end
+
+--[[tests["close_failing"] = function ()
+    expect_close(0.9, 1, 0.01)
+end
 --]]
 
 --

@@ -28,6 +28,8 @@
                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
     expect_tableeq(ltable, rtable):               verifies that 'ltable' contains the same key-value pairs as 'rtable'. Will recursively check subtables.
     expect_containstable(table, tval):            verifies that 'table' contains an instance of the table 'tval'. 
+    expect_close(value, target, magnitudeDif):    verifies that the difference between 'target' and 'value' is less than or equal to abs('magnitudeDif' * 'target'). Fails 
+                                                        any argument is not a number. A negative magnitude is treated as a positive.
     expect(expression):                           verifies that 'expression' evaluates to true, 'expression' must evaluate to a boolean.
     expect_failure(test_func, expected_err, ...): verifies that the given function would fail if run as a test. (Probably not useful unless testing the unittest module itself.)
                                                     Optional string 'expected_err', if set, searches the function failure msg for 'expected_err', fails if it is not found.
@@ -107,6 +109,7 @@ _failure_conditions = {
     tableeq       = "table 1 was not equal to table 2",
     tablene       = "table 1 was equal to table 2",
     containstable = "table did not contain expected table",
+    close         = "value was not close enough to target value",
     istrue        = "expression was false",
     failure       = "",
 
@@ -195,6 +198,8 @@ local function get_failure_msg()
         msg = msg .. _failure_conditions.tablene .. failure.additional_msg .. ", expected: table 1 != table 2"
     elseif failure.operation == _failure_conditions.containstable then
         msg = msg .. _failure_conditions.containstable .. failure.additional_msg .. ", expected: table 1 to contain table 2"
+    elseif failure.operation == _failure_conditions.close then
+        msg = msg .. _failure_conditions.close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be within +- " .. failure.arguments[3] .. " of " .. failure.arguments[2]
     elseif failure.operation == _failure_conditions.istrue then
         msg = msg .. _failure_conditions.istrue .. failure.additional_msg .. ", expected: expression to be true"
     elseif failure.operation == _failure_conditions.failure then
@@ -249,7 +254,7 @@ function run_all_tests()
             offset = offset .. " "
         end
         if (type(test) == "function") then
-            local test_group_name = (type(test_group) == string and "[TEST]" or '[' .. test_file .. "]")
+            local test_group_name = (type(test_group) == string and "[TEST]" or '[' .. test_group .. "]")
             io.write(test_group_name, "[", name, "]:", offset)
             local test_passed = run_test(test)
 
@@ -602,7 +607,7 @@ function expect_containstable(table, tval)
     if type(table) ~= "table" or type(tval) ~= "table" then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
-    
+
     else
         local found = search_table(table, tval)
         if found then 
@@ -610,6 +615,41 @@ function expect_containstable(table, tval)
 
         else
             coroutine.yield(false)
+        end
+    end
+end
+
+
+--optional hardcore challenge: expect_close for strings allowing for a certain number of different characters
+function expect_close(value, target, magnitudeDif)
+    failure.operation = _failure_conditions.close
+    failure.num_arguments = 3
+    failure.arguments = {value, target, target * magnitudeDif}
+    failure.expected_types = {"number", "number", "number"}
+    failure.line_num = debug.getinfo(2).currentline
+
+    if type(value) ~= "number" or type(target) ~= "number" or type(magnitudeDif) ~= "number" then
+        failure.arg_error = _failure_conditions.badtype
+        coroutine.yield(false)
+    
+    else
+        --normalize args
+        if magnitudeDif < 0 then magnitudeDif = magnitudeDif * -1 end
+
+        local allowedDif = target * magnitudeDif
+        --local realValDif = adjustedVal - target
+        if target >= 0 then
+            if value >= target - allowedDif and value <= target + allowedDif  then
+                coroutine.yield(true)
+            else 
+                coroutine.yield(false)
+            end
+        else
+            if value <= target - allowedDif and value >= target + allowedDif  then
+                coroutine.yield(true)
+            else 
+                coroutine.yield(false)
+            end
         end
     end
 end
