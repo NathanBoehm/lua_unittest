@@ -35,15 +35,6 @@ tests["test_failure_passing"] = function ()
     --expect_failure(f3, "unexpected error:")
 end
 
---local function f_pass()
---    expect_eq(5, 5)
---end
-
---tests["test_failure_failing"] = function ()
---    expect_failure(f_pass)
---end
---]]
---
 --expect_eq
 tests["expect_eq_passing"] = function ()
     for i=0, 1000 do
@@ -534,6 +525,12 @@ tests["tableeq_passing"] = function ()
     local t4 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
     expect_tableeq(t3,t4)
     expect_tableeq(t3,t3)
+end
+
+--intended to expose a potential bug in check tables, where a difference in subtables earlier in the parent table is ignore if there is a matching sub table later on
+tests["tableeq_similar_but_diff"] = function ()
+    local function f() expect_tableeq({1, 2, {1, 2}, 3, {4,5}}, {1, 2, {1, 1}, 3, {4,5}}) end
+    expect_failure(f)
 end
 
 --TODO: volume test?

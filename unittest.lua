@@ -199,7 +199,7 @@ local function get_failure_msg()
     elseif failure.operation == _failure_conditions.containstable then
         msg = msg .. _failure_conditions.containstable .. failure.additional_msg .. ", expected: table 1 to contain table 2"
     elseif failure.operation == _failure_conditions.close then
-        msg = msg .. _failure_conditions.close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be within +- " .. failure.arguments[3] .. " of " .. failure.arguments[2]
+        msg = msg .. _failure_conditions.close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be within ±" .. failure.arguments[3] .. " of " .. failure.arguments[2]
     elseif failure.operation == _failure_conditions.istrue then
         msg = msg .. _failure_conditions.istrue .. failure.additional_msg .. ", expected: expression to be true"
     elseif failure.operation == _failure_conditions.failure then
@@ -237,7 +237,7 @@ local function run_test(test, ...)
 end
 
 function run_all_tests()
-    io.write(cyan, "\n---BEGIN TESTS---\n\n", endcolor)
+    io.write("\n", cyan, "---BEGIN TESTS---", endcolor, "\n\n")
     local longest_name = 0
     for i=1, #tests do
         local name = _tests_name[i]
@@ -259,16 +259,16 @@ function run_all_tests()
             local test_passed = run_test(test)
 
             if (test_passed == true) then
-                io.write(green, "PASSED\n", endcolor)
+                io.write(green, "PASSED", endcolor, "\n")
             else
-                io.write(red, "FAILED\n", endcolor)
+                io.write(red, "FAILED", endcolor, "\n")
                 io.write(yellow, get_failure_msg(), endcolor, "\n")
             end
         else
             io.write(yellow, "UNIT TEST ERROR: test \"", name, "\" was not a function!\n", endcolor)
         end
     end
-    io.write(cyan, "\n---END TESTS---\n", endcolor)
+    io.write("\n", cyan, "---END TESTS---", endcolor, "\n\n")
 end
 
 function add_test(name, test)
@@ -532,6 +532,7 @@ local function check_tables(ltable, rtable)
             if type(v) == "table" then
                 if type(rtable[k]) == "table" then
                     are_equal = check_tables(v, rtable[k])
+                    if not are_equal then return are_equal end --must return false here or a subsequent pair of subtables that are the same will overwrite this.
                 else
                     are_equal = false
                 end 
