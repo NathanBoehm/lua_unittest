@@ -254,7 +254,7 @@ function run_all_tests()
             offset = offset .. " "
         end
         if (type(test) == "function") then
-            local test_group_name = (type(test_group) == string and "[TEST]" or '[' .. test_group .. "]")
+            local test_group_name = (type(test_group) == "string" and "[" .. test_group .. "]" or "[TEST]")
             io.write(test_group_name, "[", name, "]:", offset)
             local test_passed = run_test(test)
 
