@@ -7,10 +7,10 @@
 --
 -- Created by Nathan Boehm, 2019
 
---dofile("C:/Users/Nathan_Boehm/source/repos/lua_unittest/unittest_unittest.lua")
-package.path = "C:/Users/Nathan_Boehm/source/repos/lua_unittest/?.lua"
+--dofile("C:/Users/Nathan_Boehm/source/repos/lua_unittest/debug/unittest_unittest.lua")
+package.path = "C:/Users/Nathan_Boehm/source/repos/lua_unittest/debug/?.lua"
 
---[[TODO: make the unittest return all failures within a function?
+--[[TODO:
           consolodate multiple 'failing' tests into single tests where it makes sense
           document tests' purposes, add more where necessary
           visually verify all test failure output in unittest_failure_unittest

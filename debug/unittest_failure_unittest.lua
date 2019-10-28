@@ -8,8 +8,8 @@
 --
 -- Created by Nathan Boehm, 2019
 
---dofile("C:/Users/Nathan_Boehm/source/repos/lua_unittest/unittest_failure_unittest.lua")
-package.path = "C:/Users/Nathan_Boehm/source/repos/lua_unittest/?.lua"
+--dofile("C:/Users/Nathan_Boehm/source/repos/lua_unittest/debug/unittest_failure_unittest.lua")
+package.path = "C:/Users/Nathan_Boehm/source/repos/lua_unittest/debug/?.lua"
 
 require 'unittest'
 load_modules()

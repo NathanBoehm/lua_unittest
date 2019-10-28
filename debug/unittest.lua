@@ -18,8 +18,11 @@
     expect_gt(lhs, rhs):                          verifies that 'lhs' is greater than 'rhs', 'lhs' and 'rhs' must be of the same type. Fails if 'lhs' is equal to 'rhs'.
     expect_gte(lhs, rhs):                         same as expect_gt, except 'lhs' can be equal to 'rhs'.
     expect_inrange(val, lower, upper):            verifies that 'val' is >= 'lower' and <= 'upper'. Fails is any argument is not a number.
+    expect_not_inrange(val, lower, upper):
     expect_contains(table, val):                  verifies that 'table' contains at least one instance of 'val', 'val' cannot be nil or a table.
+    expect_not_contains(table, val):
     expect_type(value, type):                     verifies that 'value' is of type 'type', 'type' must ve a string and represent a valid type.
+    expect_not_type(value, type):
     expect_error(function, ...):                  verifies that 'function' produces an error when run, 'function' must be a funciton. 
                                                     '...' is an optional, variable number of arguments that the function will be called with.
                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
@@ -94,20 +97,20 @@ failure.reset = function ()
 end
 
 _failure_conditions = {
-    eq            = "arguments not equal",
-    ne            = "arguments equal",
-    lt            = "argument 1 not less than argument 2",
-    lte           = "argument 1 not less than or equal to argument 2",
-    gt            = "argument 1 not greater than argument 2",
-    gte           = "argument 1 not greater than or equal to argument 2",
-    inrange       = "value not in range",
+    eq            = "arguments were not equal",
+    ne            = "arguments were equal",
+    lt            = "argument 1 was not less than argument 2",
+    lte           = "argument 1 was not less than or equal to argument 2",
+    gt            = "argument 1 was not greater than argument 2",
+    gte           = "argument 1 was not greater than or equal to argument 2",
+    inrange       = "value was not in range",
+    not_inrange   = "value was in range",
     contains      = "table did not contain value",
+    not_contains  = "table contained value",
     type          = "value was not of expected type",
+    not_type      = "value was of the incorrect type",
     error         = "function did not produce error",
     noerror       = "function produced an error",
-    tableeq       = "table 1 was not equal to table 2",
-    tablene       = "table 1 was equal to table 2",
-    containstable = "table did not contain expected table",
     close         = "value was not close enough to target value",
     istrue        = "expression was false",
     failure       = "",
@@ -183,20 +186,20 @@ local function get_failure_msg()
         msg = msg .. _failure_conditions.gte .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " >= " .. failure.arguments[2]
     elseif failure.operation == _failure_conditions.inrange then
         msg = msg .. _failure_conditions.inrange .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " in range " .. "{" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
+    elseif failure.operation == _failure_conditions.not_inrange then
+        msg = msg .. _failure_conditions.not_inrange .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. "in range " .. "{" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
     elseif failure.operation == _failure_conditions.contains then
         msg = msg .. _failure_conditions.contains .. failure.additional_msg .. ", expected: table to contain " .. failure.arguments[2]
+    elseif failure.operation == _failure_conditions.not_contains then
+        msg = msg .. _failure_conditions.not_contains .. failure.additional_msg .. ", expected: table to contain " .. failure.arguments[2]
     elseif failure.operation == _failure_conditions.type then
-        msg = msg .. _failure_conditions.type .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be if type " .. string.sub(failure.arguments[2], 1, -1)
+        msg = msg .. _failure_conditions.type .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be of type " .. string.sub(failure.arguments[2], 1, -1)
+    elseif failure.operation == _failure_conditions.not_type then
+        msg = msg .. _failure_conditions.not_type .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to not be of type " .. string.sub(failure.arguments[2], 1, -1)
     elseif failure.operation == _failure_conditions.error then
         msg = msg .. _failure_conditions.error .. failure.additional_msg .. ", expected: function to produce error"
     elseif failure.operation == _failure_conditions.noerror then
         msg = msg .. _failure_conditions.noerror .. failure.additional_msg .. ", expected: function to not produce error"
-    elseif failure.operation == _failure_conditions.tableeq then
-        msg = msg .. _failure_conditions.tableeq .. failure.additional_msg .. ", expected: table 1 == table 2"
-    elseif failure.operation == _failure_conditions.tablene then
-        msg = msg .. _failure_conditions.tablene .. failure.additional_msg .. ", expected: table 1 != table 2"
-    elseif failure.operation == _failure_conditions.containstable then
-        msg = msg .. _failure_conditions.containstable .. failure.additional_msg .. ", expected: table 1 to contain table 2"
     elseif failure.operation == _failure_conditions.close then
         msg = msg .. _failure_conditions.close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be within ±" .. failure.arguments[3] .. " of " .. failure.arguments[2]
     elseif failure.operation == _failure_conditions.istrue then
@@ -215,7 +218,7 @@ local function run_test(test, ...)
     local failure_log = {}
     local failure_count = 0
     while (true) do --continue running regardless of expect_<>() results until the end of the function is reached or an unexpected error occurs
-        op_status, yield_val = coroutine.resume(test_routine, ...)
+        op_status, yield_val = coroutine.resume(test_routine, ...) --consider an assert return that immeadiately ends the operation, for assert functions
 
         if (op_status == false) then 
             failure.unexpected_error = yield_val
@@ -232,7 +235,6 @@ local function run_test(test, ...)
         end
 
         if (coroutine.status(test_routine) == "dead") then --end of function reached
-            --test_passed = true
             break
         end
     end
@@ -482,7 +484,10 @@ function expect_inrange(val, lower, upper)
     end
 end
 
---probably need a does_not_contain
+function expect_not_inrange(val, lower, upper)
+
+end
+
 function expect_contains(table, val)
     failure.operation = _failure_conditions.contains
     failure.num_arguments = 2
@@ -516,6 +521,10 @@ function expect_contains(table, val)
     end
 end
 
+function expect_doesnt_contain(table, val)
+
+end
+
 --probably need a not_type
 function expect_type(value, type)
     failure.operation = _failure_conditions.type
@@ -534,6 +543,10 @@ function expect_type(value, type)
     else 
         coroutine.yield(true)
     end
+end
+
+function expect_not_type(value, type)
+
 end
 
 --I really doubt whether there is a use case for expecdt_error/noerror, but I will leave them in for now
@@ -665,7 +678,7 @@ function expect_failure(test_func, expected_err, ...)
             if expected_err ~= nil then
                 for _,msg in pairs(failure_log) do
                     if not string.find(msg, expected_err) then
-                        failure.additional_msg = "test function failure message \"" .. msg .. "\" did not contain the expected message: " .. expected_err
+                        failure.additional_msg = "test function failure message \"" .. msg .. "\" did not contain the expected message: " .. expected_err --TODO: NEED TO TEST THAT MULTIPLE FAILURE MESSAGES SHOW UP IN OUTPUT
                         coroutine.yield(false)
                     end
                 end
