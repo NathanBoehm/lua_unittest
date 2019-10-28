@@ -29,8 +29,9 @@
     expect_close(value, target, magnitudeDif):    verifies that the difference between 'target' and 'value' is less than or equal to abs('magnitudeDif' * 'target'). Fails 
                                                         any argument is not a number. A negative magnitude is treated as a positive.
     expect(expression):                           verifies that 'expression' evaluates to true, 'expression' must evaluate to a boolean.
-    expect_failure(test_func, expected_err, ...): verifies that the given function would fail if run as a test. (Probably not useful unless testing the unittest module itself.)
-                                                    Optional string 'expected_err', if set, searches the function failure msg for 'expected_err', fails if it is not found.
+    expect_failure(test_func, expected_err, ...): verifies that the given function would fail if run as a test. (Probably not useful unless testing the unittest module itself - will be removed form 'release' version)
+                                                    Optional string 'expected_err', if set, searches the function failure msg for 'expected_err', fails if it is not found. 
+                                                        If there are multiple failure messages within an expect_failure call, then each failure message will be check for 'expect_err'
                                                     '...' is an optional, variable number of arguments that the function will be called with
                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
 ]]
@@ -210,28 +211,33 @@ end
 
 local function run_test(test, ...)
     local test_routine = coroutine.create(test)
-    local test_passed = false
-    while (true) do
+    local test_passed = true
+    local failure_log = {}
+    local failure_count = 0
+    while (true) do --continue running regardless of expect_<>() results until the end of the function is reached or an unexpected error occurs
         op_status, yield_val = coroutine.resume(test_routine, ...)
 
         if (op_status == false) then 
             failure.unexpected_error = yield_val
             test_passed = false
-            break
+            failure_count = failure_count + 1
+            failure_log[failure_count] = get_failure_msg()
+            break --no reason to continue in this case
         end
 
         if (yield_val == false) then
             test_passed = false
-            break
+            failure_count = failure_count + 1
+            failure_log[failure_count] = get_failure_msg()
         end
 
-        if (coroutine.status(test_routine) == "dead") then --exited successfully
-            test_passed = true
+        if (coroutine.status(test_routine) == "dead") then --end of function reached
+            --test_passed = true
             break
         end
     end
 
-    return test_passed
+    return test_passed, failure_log
 end
 
 function run_all_tests()
@@ -254,13 +260,15 @@ function run_all_tests()
         if (type(test) == "function") then
             local test_group_name = (type(test_group) == "string" and "[" .. test_group .. "]" or "[TEST]")
             io.write(test_group_name, "[", name, "]:", offset)
-            local test_passed = run_test(test)
+            local test_passed, failure_log = run_test(test)
 
             if (test_passed == true) then
                 io.write(green, "PASSED", endcolor, "\n")
             else
                 io.write(red, "FAILED", endcolor, "\n")
-                io.write(yellow, get_failure_msg(), endcolor, "\n")
+                for _,err_msg in ipairs(failure_log) do
+                    io.write(yellow, err_msg, endcolor, "\n")
+                end
             end
         else
             io.write(yellow, "UNIT TEST ERROR: test \"", name, "\" was not a function!\n", endcolor)
@@ -474,6 +482,7 @@ function expect_inrange(val, lower, upper)
     end
 end
 
+--probably need a does_not_contain
 function expect_contains(table, val)
     failure.operation = _failure_conditions.contains
     failure.num_arguments = 2
@@ -507,6 +516,7 @@ function expect_contains(table, val)
     end
 end
 
+--probably need a not_type
 function expect_type(value, type)
     failure.operation = _failure_conditions.type
     failure.num_arguments = 2
@@ -526,6 +536,7 @@ function expect_type(value, type)
     end
 end
 
+--I really doubt whether there is a use case for expecdt_error/noerror, but I will leave them in for now
 function expect_error(func, ...)
     failure.operation = _failure_conditions.error
     failure.num_arguments = 1
@@ -536,14 +547,14 @@ function expect_error(func, ...)
     if (type(func) ~= "function") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
-    end
-
-    success = pcall(func, ...)
-    if not success then 
-        coroutine.yield(true)
-
     else
-        coroutine.yield(false)
+        success = pcall(func, ...)
+        if not success then 
+            coroutine.yield(true)
+
+        else
+            coroutine.yield(false)
+        end
     end
 end
 
@@ -557,14 +568,14 @@ function expect_noerror(func, ...)
     if (type(func) ~= "function") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
-    end
-
-    success = pcall(func, ...)
-    if success then
-        coroutine.yield(true)
-
     else
-        coroutine.yield(false)
+        success = pcall(func, ...)
+        if success then
+            coroutine.yield(true)
+    
+        else
+            coroutine.yield(false)
+        end
     end
 end
 
@@ -638,8 +649,7 @@ function expect_failure(test_func, expected_err, ...)
 
     else
         failure.reset()
-        local success =  run_test(test_func, ...)
-        msg = get_failure_msg()
+        local success, failure_log =  run_test(test_func, ...)
 
         failure.operation = _failure_conditions.failure
         failure.num_arguments = 0
@@ -653,13 +663,13 @@ function expect_failure(test_func, expected_err, ...)
 
         else
             if expected_err ~= nil then
-                if string.find(msg, expected_err) then
-                    coroutine.yield(true)
-
-                else
-                    failure.additional_msg = "test function failure message did not contain the expected message"
-                    coroutine.yield(false)
+                for _,msg in pairs(failure_log) do
+                    if not string.find(msg, expected_err) then
+                        failure.additional_msg = "test function failure message \"" .. msg .. "\" did not contain the expected message: " .. expected_err
+                        coroutine.yield(false)
+                    end
                 end
+                coroutine.yield(true)
 
             else
                 coroutine.yield(true)
