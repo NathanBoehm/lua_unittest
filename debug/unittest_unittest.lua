@@ -757,4 +757,4 @@ tests["expect_contains_table_failing"] = function ()
 end
 --]]
 
-run_all_tests()
+start()

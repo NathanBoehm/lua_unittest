@@ -17,12 +17,12 @@
     expect_lte(lhs, rhs):                         same as expect_lt, except 'lhs' and be equal to 'rhs'.
     expect_gt(lhs, rhs):                          verifies that 'lhs' is greater than 'rhs', 'lhs' and 'rhs' must be of the same type. Fails if 'lhs' is equal to 'rhs'.
     expect_gte(lhs, rhs):                         same as expect_gt, except 'lhs' can be equal to 'rhs'.
-    expect_inrange(val, lower, upper):            verifies that 'val' is >= 'lower' and <= 'upper'. Fails is any argument is not a number.
-    expect_not_inrange(val, lower, upper):
-    expect_contains(table, val):                  verifies that 'table' contains at least one instance of 'val', 'val' cannot be nil or a table.
-    expect_not_contains(table, val):
-    expect_type(value, type):                     verifies that 'value' is of type 'type', 'type' must ve a string and represent a valid type.
-    expect_not_type(value, type):
+    expect_inrange(val, lower, upper):            verifies that 'val' is >= 'lower' and <= 'upper'. Fails if any argument is not a number.
+    expect_not_inrange(val, lower, upper):        verifies that 'val' is > 'upper' or < 'lower'. Fails if anhy argument is not a number.
+    expect_contains(table, val):                  verifies that 'table' contains at least one instance of 'val', 'val' cannot be nil.
+    expect_not_contains(table, val):              verifies that 'table' does not contain any instance of 'val', 'val' cannot be nil.
+    expect_type(value, type):                     verifies that 'value' is of type 'type', 'type' must be a string and represent a valid type.
+    expect_not_type(value, type):                 verifies that 'value' is not of type 'type', 'type' must be a stirng and represent a valid type.
     expect_error(function, ...):                  verifies that 'function' produces an error when run, 'function' must be a funciton. 
                                                     '...' is an optional, variable number of arguments that the function will be called with.
                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
@@ -280,13 +280,13 @@ function run_all_tests()
 end
 
 function add_test(name, test)
-    if (type(name) ~= "string") then io.write("test name was not a valid string\n") return end
+    if (type(name) ~= "string") then io.write("test name was not a valid string\n") return end --FLAG: why is there a return here?
     if (type(test) ~= "function") then io.write("test was not a valid function\n") return end
 
     tests[name] = test
 end
 
-function run()
+function start()
     run_all_tests()
 end
 
@@ -525,7 +525,6 @@ function expect_doesnt_contain(table, val)
 
 end
 
---probably need a not_type
 function expect_type(value, type)
     failure.operation = _failure_conditions.type
     failure.num_arguments = 2

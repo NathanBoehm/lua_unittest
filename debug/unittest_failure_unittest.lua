@@ -23,3 +23,5 @@ end
 local function f2()
     expect_eq(5, 6)
 end
+
+start()
