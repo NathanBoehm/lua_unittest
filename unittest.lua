@@ -26,8 +26,6 @@
     expect_noerror(function, ...):                verifies that 'function' produces an error when run, 'function' must be a function.
                                                     '...' is an optional, variable number of arguments that the function will be called with.
                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
-    expect_tableeq(ltable, rtable):               verifies that 'ltable' contains the same key-value pairs as 'rtable'. Will recursively check subtables.
-    expect_containstable(table, tval):            verifies that 'table' contains an instance of the table 'tval'. 
     expect_close(value, target, magnitudeDif):    verifies that the difference between 'target' and 'value' is less than or equal to abs('magnitudeDif' * 'target'). Fails 
                                                         any argument is not a number. A negative magnitude is treated as a positive.
     expect(expression):                           verifies that 'expression' evaluates to true, 'expression' must evaluate to a boolean.
@@ -282,6 +280,47 @@ function run()
     run_all_tests()
 end
 
+--helpers
+
+local function check_tables(ltable, rtable)
+    local are_equal = true
+    if type(rtable) ~= "table" or type(ltable) ~= "table" then 
+        failure.message = "non-table arguments"
+        are_equal = false
+    elseif (#ltable ~= #rtable) then
+        are_equal = false
+    else
+        for k,v in pairs(ltable) do
+            if type(v) == "table" then
+                if type(rtable[k]) == "table" then
+                    are_equal = check_tables(v, rtable[k])
+                    if not are_equal then return are_equal end --must return false here or a subsequent pair of subtables that are the same will overwrite this.
+                else
+                    are_equal = false
+                end 
+            elseif (rtable[k] ~= v) then
+                are_equal = false
+            end
+        end
+    end
+    return are_equal
+end
+
+local function search_table(table, tval)
+    local found = false
+    for _,v in pairs(table) do
+        if type(v) == "table" then
+            found = check_tables(v, tval)
+            if not found then 
+                found = search_table(v, tval)
+            else
+                return true
+            end
+        end
+    end
+    return found
+end
+
 --expect definitions
 
 function expect_eq(lhs, rhs)
@@ -295,6 +334,10 @@ function expect_eq(lhs, rhs)
         failure.arg_error = _failure_conditions.difftypes
 
         coroutine.yield(false)
+
+    elseif (type(lhs) == "table") then
+        local tables_eq = check_tables(lhs, rhs)
+        coroutine.yield(tables_eq)
 
     elseif (not (lhs == rhs)) then
         coroutine.yield(false)
@@ -316,6 +359,12 @@ function expect_ne(lhs, rhs)
 
     elseif (not (lhs ~= rhs)) then
         coroutine.yield(false)
+
+    elseif (type(lhs) == "table") then
+        failure.operation = _failure_conditions.tablene
+
+        local tables_eq = check_tables(lhs, rhs)
+        coroutine.yield(not tables_eq)
 
     else 
         coroutine.yield(true)
@@ -429,7 +478,7 @@ function expect_contains(table, val)
     failure.operation = _failure_conditions.contains
     failure.num_arguments = 2
     failure.arguments = {table, val}
-    failure.expected_types = {"table", "non-nil and non-table"}
+    failure.expected_types = {"table", "non-nil"}
     failure.line_num = debug.getinfo(2).currentline
 
     if type(table) ~= "table" then
@@ -441,9 +490,8 @@ function expect_contains(table, val)
         coroutine.yield(false)
 
     elseif type(val) == "table" then
-        failure.additional_msg = ". contained value cannot be a table, use expect_containstable() instead"
-        failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        local found = search_table(table, val)
+        coroutine.yield(found)
 
     else
         found = false
@@ -519,107 +567,6 @@ function expect_noerror(func, ...)
         coroutine.yield(false)
     end
 end
-
-local function check_tables(ltable, rtable)
-    local are_equal = true
-    if type(rtable) ~= "table" or type(ltable) ~= "table" then 
-        failure.message = "non-table arguments"
-        are_equal = false
-    elseif (#ltable ~= #rtable) then
-        are_equal = false
-    else
-        for k,v in pairs(ltable) do
-            if type(v) == "table" then
-                if type(rtable[k]) == "table" then
-                    are_equal = check_tables(v, rtable[k])
-                    if not are_equal then return are_equal end --must return false here or a subsequent pair of subtables that are the same will overwrite this.
-                else
-                    are_equal = false
-                end 
-            elseif (rtable[k] ~= v) then
-                are_equal = false
-            end
-        end
-    end
-    return are_equal
-end
-
-
-function expect_tableeq(ltable, rtable)
-    failure.operation = _failure_conditions.tableeq
-    failure.num_arguments = 2
-    failure.arguments = {"left hand table", "right hand table"}
-    failure.expected_types = {"table", "table"}
-    failure.line_num = debug.getinfo(2).currentline
-
-    if type(ltable) ~= "table" or type(rtable) ~= "table" then
-        failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
-
-    else
-        local equal = check_tables(ltable, rtable)
-        if equal then
-            coroutine.yield(true)
-
-        else
-            coroutine.yield(false)
-        end
-    end
-end
-
-function expect_tablene(ltable, rtable)
-    failure.operation = _failure_conditions.tablene
-    failure.num_arguments = 2
-    failure.arguments = {"left hand table", "right hand table"}
-    failure.expected_types = {"table", "table"}
-    failure.line_num = debug.getinfo(2).currentline
-
-    local equal = check_tables(ltable, rtable)
-    if not equal then
-        coroutine.yield(true)
-
-    else
-        coroutine.yield(false)
-    end
-end
-
-local function search_table(table, tval)
-    local found = false
-    for _,v in pairs(table) do
-        if type(v) == "table" then
-            found = check_tables(v, tval)
-            if not found then 
-                found = search_table(v, tval)
-            else
-                return true
-            end
-        end
-    end
-    return found
-end
-
-function expect_containstable(table, tval)
-    failure.operation = _failure_conditions.containstable
-    failure.num_arguments = 2
-    failure.arguments = {table, tval}
-    failure.expected_types = {"table", "table"}
-    failure.line_num = debug.getinfo(2).currentline
-
-    if type(table) ~= "table" or type(tval) ~= "table" then
-        failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
-
-    else
-        local found = search_table(table, tval)
-        if found then 
-            coroutine.yield(true)
-
-        else
-            coroutine.yield(false)
-        end
-    end
-end
-
 
 --optional hardcore challenge: expect_close for strings allowing for a certain number of different characters
 function expect_close(value, target, magnitudeDif)

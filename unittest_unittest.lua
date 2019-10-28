@@ -10,47 +10,32 @@
 --dofile("C:/Users/Nathan_Boehm/source/repos/lua_unittest/unittest_unittest.lua")
 package.path = "C:/Users/Nathan_Boehm/source/repos/lua_unittest/?.lua"
 
---[[TODO: standardize test names
-          consolodate multiple 'failing' tests into single tests where it makes sense--]]
+--[[TODO: 
+          consolodate multiple 'failing' tests into single tests where it makes sense
+          document tests' purposes, add more where necessary
+          visually verify all test failure output in unittest_failure_unittest
+          --]]
 
 require 'unittest'
 load_modules()
 
-test_group = 'unittest'
-
---
---test_failure
-local function f()
-    expect_eq(5, "5")
-end
-
-local function f2()
-    expect_eq(5, 6)
-end
-
-tests["test_failure_passing"] = function ()
-    expect_failure(f)
-    expect_failure(f, _failure_conditions.difftypes)
-    expect_failure(f2, _failure_conditions.eq)
-    --expect_failure(f3, "unexpected error:")
-end
 
 --expect_eq
 tests["expect_eq_passing"] = function ()
     for i=0, 1000 do
-        expect_eq(i,i)
+        expect_eq(i,i) --basic int
     end
 
-    expect_eq("string", "string")
+    expect_eq("string", "string") --basic string
     expect_eq("dsl908ajl9908097\n\n\n\n\n\t", "dsl908ajl9908097\n\n\n\n\n\t")
-    expect_eq("{\":::<>()*&&^%$#@!}", "{\":::<>()*&&^%$#@!}")
+    expect_eq("{\":::<>()*&&^%$#@!}", "{\":::<>()*&&^%$#@!}") --complicated strings
 
-    expect_eq(type({1}), type({2}))
+    expect_eq(type({1}), type({2})) -- types strings
 
     expect_eq(true, true)
-    expect_eq(false, false)
+    expect_eq(false, false) --types bool
 
-    expect_eq(nil, nil)
+    expect_eq(nil, nil) --types nil
 end
 
 tests["expect_eq_failing_noteq1"] = function ()
@@ -93,19 +78,75 @@ tests["expect_eq_failing_missing_args"] = function ()
     expect_failure(f)
 end
 
---tests["failing_tomany_args"] = function ()
---    expect_eq(5,5,4) -- true because extra args are ignored
---end
-
---tests["failing_missing_args2"] = function ()
---    expect_eq() --true because nil == nil
---end
-
 tests["expect_eq_failing_volume"] = function ()
     local function f(v1,v2) expect_eq(v1,v2) end
     for i=0, 1000 do
         expect_failure(f, _failure_conditions.failure, i, i+1)
     end
+end
+
+tests["expect_eq_table_passing"] = function ()
+    expect_eq({1,2,3}, {1,2,3}) --standard
+
+    expect_eq({["k1"] = "string", 2, "string", ["k2"] = 99}, {["k1"] = "string", 2, "string", ["k2"] = 99}) --nested with keys
+
+    local t1 = {1,2, k={3,4}}
+    local t2 = {1,k={3,4},2}
+    expect_eq(t1, t2) --ordering
+
+    local t3 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
+    local t4 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
+    expect_eq(t3,t4) --equivalent
+    expect_eq(t3,t3) --same
+end
+
+tests["expect_eq_table_similar_but_diff"] = function ()
+    local function f() expect_eq({1, 2, {1, 2}, 3, {4,5}}, {1, 2, {1, 1}, 3, {4,5}}) end
+    expect_failure(f)
+end
+
+tests["expect_eq_table_failing_size"] = function ()
+    local function f() expect_eq({1,2,3}, {1,2}) end
+    expect_failure(f, _failure_conditions.eq)
+end
+
+tests["expect_eq_table_failing_diff"] = function ()
+    local function f() expect_eq({1,2,3}, {1,2,4}) end 
+    expect_failure(f, _failure_conditions.eq)
+end
+
+tests["expect_eq_table_failing_diff_nested"] = function ()
+    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
+    local t2 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["v"] = 1}}, 2}
+    local function f() expect_eq(t1, t2) end
+    expect_failure(f, _failure_conditions.eq)
+end
+
+tests["expect_eq_table_failing_diff_nested"] = function ()
+    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
+    local t2 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 2}}, 2}
+    local function f() expect_eq(t1, t2) end
+    expect_failure(f, _failure_conditions.eq) 
+end
+
+tests["expect_eq_table_difftypes"] = function ()
+    local function f() expect_eq({1,2}, 1) end
+    expect_failure(f, _failure_conditions.difftypes)
+end
+
+tests["expect_eq_table_difftypes2"] = function ()
+    local function f() expect_eq(true, {1,2}) end
+    expect_failure(f, _failure_conditions.difftypes)
+end
+
+tests["expect_eq_table_difftypes3"] = function ()
+    local function f() expect_eq("string", {1,2}) end
+    expect_failure(f, _failure_conditions.difftypes)
+end
+
+tests["expect_eq_table_difftypes4"] = function ()
+    local function f() expect_eq(nil, {1,2}) end
+    expect_failure(f, _failure_conditions.difftypes)
 end
 --]]
 
@@ -131,7 +172,6 @@ tests["expect_ne_passing_volume"] = function ()
     end
 end
 
-
 tests["expect_ne_failing1"] = function ()
     local function f() expect_ne("\t", "\t") end
     expect_failure(f)
@@ -152,11 +192,6 @@ tests["expect_ne_failing4"] = function ()
     expect_failure(f)
 end
 
---[[tests["failing_missing_args"] = function ()
-    local function f() expect_ne(6) end --not a failure because 6 is compared to nil which is not equal
-    expect_failure(f)
-end--]]
-
 tests["expect_ne_failing5"] = function ()
     local function f() expect_ne(nil, nil) end
     expect_failure(f)
@@ -167,6 +202,43 @@ tests["expect_ne_failing_volume"] = function ()
     for i=0, 1000 do
         expect_failure(f, _failure_conditions.failure, i, i)
     end
+end
+
+tests["expect_ne_table_passing"] = function ()
+    expect_ne({1, 2, {1, 2}, 3, {4,5}}, {1, 2, {1, 1}, 3, {4,5}})
+    expect_ne(nil, {1,2})
+    expect_ne("string", {1,2})
+    expect_ne({1,2}, 1)
+
+    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
+    local t2 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 2}}, 2}
+    expect_ne(t1, t2)
+
+    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
+    local t2 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["v"] = 1}}, 2}
+    expect_ne(t1, t2)
+
+    expect_ne({1,2,3}, {1,2,4})
+    expect_ne({1,2,3}, {1,2})
+    expect_ne({1, 2, {1, 2}, 3, {4,5}}, {1, 2, {1, 1}, 3, {4,5}})
+end
+
+tests["expect_ne_table_failing"] = function ()
+    local function f1() expect_ne({1,2,3}, {1,2,3}) end
+    local function f2() expect_ne({["k1"] = "string", 2, "string", ["k2"] = 99}, {["k1"] = "string", 2, "string", ["k2"] = 99}) end
+    local t1 = {1,2, k={3,4}}
+    local t2 = {1,k={3,4},2}
+    local function f3() expect_ne(t1, t2) end
+    local t3 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
+    local t4 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
+    local function f4() expect_ne(t3,t4) end
+    local function f5() expect_ne(t3,t3) end
+
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+    expect_failure(f4)
+    expect_failure(f5)
 end
 --]]
 
@@ -371,20 +443,6 @@ tests["expect_gte_failing5"] = function ()
 end
 --]]
 
---[[
-function _test()
-    expect_eq(5, 6)
-end
-
-function __test()
-    _test()
-end
-
-tests["func_test_failing"] = function ()
-    __test()
-end
---]]
-
 --
 --expect_error
 function err_func()
@@ -514,164 +572,6 @@ end
 --]]
 
 --
---tableeq
-tests["tableeq_passing"] = function ()
-    expect_tableeq({1,2,3}, {1,2,3})
-    expect_tableeq({["k1"] = "string", 2, "string", ["k2"] = 99}, {["k1"] = "string", 2, "string", ["k2"] = 99})
-    local t1 = {1,2, k={3,4}}
-    local t2 = {1,k={3,4},2}
-    expect_tableeq(t1, t2)
-    local t3 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
-    local t4 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
-    expect_tableeq(t3,t4)
-    expect_tableeq(t3,t3)
-end
-
---intended to expose a potential bug in check tables, where a difference in subtables earlier in the parent table is ignore if there is a matching sub table later on
-tests["tableeq_similar_but_diff"] = function ()
-    local function f() expect_tableeq({1, 2, {1, 2}, 3, {4,5}}, {1, 2, {1, 1}, 3, {4,5}}) end
-    expect_failure(f)
-end
-
---TODO: volume test?
-
-tests["tableeq_failing_size"] = function ()
-    local function f() expect_tableeq({1,2,3}, {1,2}) end
-    expect_failure(f, _failure_conditions.tableeq)
-end
-
-tests["tableeq_failing_diff"] = function ()
-    local function f() expect_tableeq({1,2,3}, {1,2,4}) end 
-    expect_failure(f, _failure_conditions.tableeq)
-end
-
-tests["tableeq_failing_diff_nested"] = function ()
-    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
-    local t2 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["v"] = 1}}, 2}
-    local function f() expect_tableeq(t1, t2) end
-    expect_failure(f, _failure_conditions.tableeq)
-end
-
-tests["tableeq_failing_diff_nested"] = function ()
-    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
-    local t2 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 2}}, 2}
-    local function f() expect_tableeq(t1, t2) end
-    expect_failure(f, _failure_conditions.tableeq) 
-end
-
-tests["tableeq_difftypes"] = function ()
-    local function f() expect_tableeq({1,2}, 1) end
-    expect_failure(f, _failure_conditions.badtype)
-end
-
-tests["tableeq_difftypes2"] = function ()
-    local function f() expect_tableeq(true, {1,2}) end
-    expect_failure(f, _failure_conditions.badtype)
-end
-
-tests["tableeq_difftypes3"] = function ()
-    local function f() expect_tableeq("string", {1,2}) end
-    expect_failure(f, _failure_conditions.badtype)
-end
-
-tests["tableeq_difftypes4"] = function ()
-    local function f() expect_tableeq(nil, {1,2}) end
-    expect_failure(f, _failure_conditions.badtype)
-end
-
-tests["tableeq_difftypes4"] = function ()
-    local function f() expect_tableeq(1,1) end
-    expect_failure(f, _failure_conditions.badtype)
-end
---]]
-
---
---tablene
-tests["tablene_passing"] = function ()
-    expect_tablene({1,2,3}, {1,2})
-    expect_tablene({1,2,3}, {1,2,4})
-    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
-    local t2 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 2}}, 2}
-    expect_tablene(t1, t2)
-    local t3 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
-    local t4 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["v"] = 1}}, 2}
-    expect_tablene(t1, t2)
-end
-
---TODO: volume test?
-
-tests["tablene_failing"] = function ()
-    local function f() expect_tablene({1,2,3,4}, {1,2,3,4}) end
-    expect_failure(f, _failure_conditions.tablene)
-end
-
-tests["tablene_failing2"] = function ()
-    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
-    local t2 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = 1}}, 2}
-    local function f() expect_tablene(t1, t2) end
-    expect_failure(f, _failure_conditions.tablene)
-end
---]]
-
---
---expect_containstable
-tests["containstable_passing"] = function ()
-    expect_containstable({true,{false}}, {false})
-    expect_containstable({{}},{})
-
-    local t1 = {1,2, {1,2,3}}
-    local t2 = {1,2,3}
-    expect_containstable(t1,t2)
-
-    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
-    local t2 =  {"super sub table", "ye", 1}
-    expect_containstable(t1, t2)
-end
-
-tests["containstable_failing"] = function ()
-    local t1 = {1,2, {1,2,3}}
-    local t2 = {1,2}
-    local function f() expect_containstable(t1,t2) end
-    expect_failure(f, _failure_conditions.containstable)
-end
-
-tests["containstable_failing2"] = function ()
-    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
-    local t2 =  {"super (not) sub table", "ye", 1}
-    local function f() expect_containstable(t1, t2) end
-    expect_failure(f, _failure_conditions.containstable)
-end
-
-tests["containstable_failing3"] = function ()
-    t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
-    t2 = {"who dis?"}
-    local function f() expect_containstable(t1, t2) end
-    expect_failure(f, _failure_conditions.containstable)
-end
-
-tests["containstable_failing_badtypes1"] = function ()
-    local function f() expect_containstable({1,2}, 1) end
-    expect_failure(f, _failure_conditions.badtype)
-end
-
-tests["containstable_failing_badtypes2"] = function ()
-    local function f() expect_containstable("yeyeyeye", {1}) end
-    expect_failure(f, _failure_conditions.badtype)
-end
-
-tests["containstable_failing_badtypes3"] = function ()
-    local function f() expect_containstable(true, {true}) end
-    expect_failure(f, _failure_conditions.badtype)
-end
-
-tests["containstable_failing_badtypes4"] = function ()
-    local function f() expect_containstable(nil, {1}) end
-    expect_failure(f)
-end
-
---]]
-
---
 --close
 tests["close_passing"] = function ()
     expect_close(0.9, 1, 0.2)
@@ -790,7 +690,44 @@ end
 
 tests["expect_contains_failing5"] = function ()
     local function f() expect_contains({"tableu"}, {"tableu"}) end
-    expect_failure(f, _failure_conditions.badtype)
+    expect_failure(f, _failure_conditions.contains)
+end
+
+tests["expect_contains_table_passing"] = function ()
+    expect_contains({true,{false}}, {false})
+    expect_contains({{}},{})
+
+    local t1 = {1,2, {1,2,3}}
+    local t2 = {1,2,3}
+    expect_contains(t1,t2)
+
+    local t1 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
+    local t2 =  {"super sub table", "ye", 1}
+    expect_contains(t1, t2)
+end
+
+tests["expect_contains_table_failing"] = function ()
+    local t1 = {1,2, {1,2,3}}
+    local t2 = {1,2}
+    local function f() expect_contains(t1,t2) end
+    expect_failure(f, _failure_conditions.contains)
+
+    local t3 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
+    local t4 =  {"super (not) sub table", "ye", 1}
+    local function f1() expect_contains(t3, t4) end
+    expect_failure(f1, _failure_conditions.contains)
+
+    t5 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
+    t6 = {"who dis?"}
+    local function f2() expect_contains(t5, t6) end
+    expect_failure(f2, _failure_conditions.contains)
+
+    t7 = {1,2,3}
+    t8 = {1,2,3}
+    local function f3() expect_contains(t7,t8) end
+    local function f4() expect_contains(t7,t7) end
+    expect_failure(f3, _failure_conditions.contains)
+    expect_failure(f4, _failure_conditions.contains)
 end
 --]]
 
