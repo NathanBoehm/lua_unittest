@@ -4,7 +4,7 @@
 --
 -- Simply put "require 'unittest'" and "load_modules(<module1>, <module2>, ...)" at the top of the unittest file
 -- and define all tests as: tests["<test_name>"] = function (...) ...  -  or use add_test(name{str}, test{func})
--- To run the tests, call run_all_tests()
+-- To run the tests, call run_all_tests() or start()
 --
 -- Created by Nathan Boehm, 2019
 
@@ -20,7 +20,7 @@
     expect_inrange(val, lower, upper):            verifies that 'val' is >= 'lower' and <= 'upper'. Fails if any argument is not a number.
     expect_not_inrange(val, lower, upper):        verifies that 'val' is > 'upper' or < 'lower'. Fails if anhy argument is not a number.
     expect_contains(table, val):                  verifies that 'table' contains at least one instance of 'val', 'val' cannot be nil.
-    expect_not_contains(table, val):              verifies that 'table' does not contain any instance of 'val', 'val' cannot be nil.
+    expect_doesnt_contain(table, val):            verifies that 'table' does not contain any instance of 'val', 'val' cannot be nil.
     expect_type(value, type):                     verifies that 'value' is of type 'type', 'type' must be a string and represent a valid type.
     expect_not_type(value, type):                 verifies that 'value' is not of type 'type', 'type' must be a stirng and represent a valid type.
     expect_error(function, ...):                  verifies that 'function' produces an error when run, 'function' must be a funciton. 
@@ -31,7 +31,8 @@
                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
     expect_close(value, target, magnitudeDif):    verifies that the difference between 'target' and 'value' is less than or equal to abs('magnitudeDif' * 'target'). Fails 
                                                         any argument is not a number. A negative magnitude is treated as a positive.
-    expect(expression):                           verifies that 'expression' evaluates to true, 'expression' must evaluate to a boolean.
+    expect_true(expression):                      verifies that 'expression' evaluates to true, 'expression' must evaluate to a boolean.
+    expect_false(expression):                     verifies that 'expression' evaluates to false, 'expression' must evaluate to a boolean.
     expect_failure(test_func, expected_err, ...): verifies that the given function would fail if run as a test. (Probably not useful unless testing the unittest module itself - will be removed form 'release' version)
                                                     Optional string 'expected_err', if set, searches the function failure msg for 'expected_err', fails if it is not found. 
                                                         If there are multiple failure messages within an expect_failure call, then each failure message will be check for 'expect_err'
@@ -97,23 +98,25 @@ failure.reset = function ()
 end
 
 _failure_conditions = {
-    eq            = "arguments were not equal",
-    ne            = "arguments were equal",
-    lt            = "argument 1 was not less than argument 2",
-    lte           = "argument 1 was not less than or equal to argument 2",
-    gt            = "argument 1 was not greater than argument 2",
-    gte           = "argument 1 was not greater than or equal to argument 2",
-    inrange       = "value was not in range",
-    not_inrange   = "value was in range",
-    contains      = "table did not contain value",
-    not_contains  = "table contained value",
-    type          = "value was not of expected type",
-    not_type      = "value was of the incorrect type",
-    error         = "function did not produce error",
-    noerror       = "function produced an error",
-    close         = "value was not close enough to target value",
-    istrue        = "expression was false",
-    failure       = "",
+    eq             = "arguments were not equal",
+    ne             = "arguments were equal",
+    lt             = "argument 1 was not less than argument 2",
+    lte            = "argument 1 was not less than or equal to argument 2",
+    gt             = "argument 1 was not greater than argument 2",
+    gte            = "argument 1 was not greater than or equal to argument 2",
+    inrange        = "value was not in range",
+    not_inrange    = "value was in range",
+    contains       = "table did not contain value",
+    doesnt_contain = "table contained value",
+    type           = "value was not of expected type",
+    not_type       = "value was of the incorrect type",
+    error          = "function did not produce error",
+    noerror        = "function produced an error",
+    close          = "value was not close enough to target value",
+    not_close      = "value was too close to the target value",
+    istrue         = "expression was false",
+    isfalse        = "expression was true",
+    failure        = "",
 
     --arg_errors
     badtype   = "argument was of incorrect type -",
@@ -190,8 +193,8 @@ local function get_failure_msg()
         msg = msg .. _failure_conditions.not_inrange .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. "in range " .. "{" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
     elseif failure.operation == _failure_conditions.contains then
         msg = msg .. _failure_conditions.contains .. failure.additional_msg .. ", expected: table to contain " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.not_contains then
-        msg = msg .. _failure_conditions.not_contains .. failure.additional_msg .. ", expected: table to contain " .. failure.arguments[2]
+    elseif failure.operation == _failure_conditions.doesnt_contain then
+        msg = msg .. _failure_conditions.doesnt_contain .. failure.additional_msg .. ", expected: table to contain " .. failure.arguments[2]
     elseif failure.operation == _failure_conditions.type then
         msg = msg .. _failure_conditions.type .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be of type " .. string.sub(failure.arguments[2], 1, -1)
     elseif failure.operation == _failure_conditions.not_type then
@@ -202,8 +205,12 @@ local function get_failure_msg()
         msg = msg .. _failure_conditions.noerror .. failure.additional_msg .. ", expected: function to not produce error"
     elseif failure.operation == _failure_conditions.close then
         msg = msg .. _failure_conditions.close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be within ±" .. failure.arguments[3] .. " of " .. failure.arguments[2]
+    elseif failure.operation == _failure_conditions.not_close then
+        msg = msg .. _failure_conditions.not_close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be at least ±" .. failure.arguments[3] .. " away from " .. failure.arguments[2]
     elseif failure.operation == _failure_conditions.istrue then
         msg = msg .. _failure_conditions.istrue .. failure.additional_msg .. ", expected: expression to be true"
+    elseif failure.operation == _failure_conditions.isfalse then
+        msg = msg .. _failure_conditions.isfalse .. failure.additional_msg .. ", expected: expression to be false"
     elseif failure.operation == _failure_conditions.failure then
         msg = msg .. _failure_conditions.failure .. failure.additional_msg
     end
@@ -218,7 +225,7 @@ local function run_test(test, ...)
     local failure_log = {}
     local failure_count = 0
     while (true) do --continue running regardless of expect_<>() results until the end of the function is reached or an unexpected error occurs
-        op_status, yield_val = coroutine.resume(test_routine, ...) --consider an assert return that immeadiately ends the operation, for assert functions
+        op_status, yield_val = coroutine.resume(test_routine, ...) --FLAG: consider an assert return that immeadiately ends the operation, for assert functions
 
         if (op_status == false) then 
             failure.unexpected_error = yield_val
@@ -333,8 +340,9 @@ end
 
 --expect definitions
 
-function expect_eq(lhs, rhs)
-    failure.operation = _failure_conditions.eq
+--expect equal/not-equal
+
+local function _eq(lhs, rhs) --not set_eq_failure() needed because there is no yeild prior to the calls to _eq
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"any", "any"}
@@ -342,129 +350,105 @@ function expect_eq(lhs, rhs)
 
     if (type(lhs) ~= type(rhs)) then
         failure.arg_error = _failure_conditions.difftypes
-
-        coroutine.yield(false)
+        return false
 
     elseif (type(lhs) == "table") then
         local tables_eq = check_tables(lhs, rhs)
-        coroutine.yield(tables_eq)
+        return tables_eq
 
-    elseif (not (lhs == rhs)) then
-        coroutine.yield(false)
-
-    else 
-        coroutine.yield(true)
+    else
+        return (lhs == rhs)
     end
+end
+
+function expect_eq(lhs, rhs)
+    failure.operation = _failure_conditions.eq
+    coroutine.yield( _eq(lhs, rhs) )
 end
 
 function expect_ne(lhs, rhs)
     failure.operation = _failure_conditions.ne
-    failure.num_arguments = 2
-    failure.arguments = {lhs, rhs}
-    failure.expected_types = {"any", "any"}
-    failure.line_num = debug.getinfo(2).currentline
-
-    if (type(lhs) ~= type(rhs)) then
-        coroutine.yield(true)
-
-    elseif (not (lhs ~= rhs)) then
-        coroutine.yield(false)
-
-    elseif (type(lhs) == "table") then
-        failure.operation = _failure_conditions.tablene
-
-        local tables_eq = check_tables(lhs, rhs)
-        coroutine.yield(not tables_eq)
-
-    else 
-        coroutine.yield(true)
-    end
+    coroutine.yield( not _eq(lhs, rhs) )
 end
 
-function expect_lt(lhs, rhs)
-    failure.operation = _failure_conditions.lt
+--expect less-than/greater-than
+
+local function set_ltgt_failure()
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"number", "number"} 
     failure.line_num = debug.getinfo(2).currentline
-
-    if (type(lhs) ~= "number" or type(rhs) ~= "number") then
-        failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
-
-    elseif (not (lhs < rhs)) then
-        failure.message = "operand 1 not less than operand 2"
-        coroutine.yield(false)
-
-    else 
-        coroutine.yield(true)
-    end
 end
 
-function expect_lte(lhs, rhs)
-    failure.operation = _failure_conditions.lte
-    failure.num_arguments = 2
-    failure.arguments = {lhs, rhs}
-    failure.expected_types = {"number", "number"}
-    failure.line_num = debug.getinfo(2).currentline
-
+function expect_lt(lhs, rhs)
+    set_ltgt_failure()
+    failure.operation = _failure_conditions.lt
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
 
-    elseif (not (lhs <= rhs)) then
-        coroutine.yield(false)
-
-    else 
-        coroutine.yield(true)
+    else
+        coroutine.yield( (lhs < rhs) )
     end
 end
 
 function expect_gt(lhs, rhs)
+    set_ltgt_failure()
     failure.operation = _failure_conditions.gt
-    failure.num_arguments = 2
-    failure.arguments = {lhs, rhs}
-    failure.expected_types = {"number", "number"}
-    failure.line_num = debug.getinfo(2).currentline
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
 
-    elseif (not (lhs > rhs)) then
+    else
+        coroutine.yield( (lhs > rhs) )
+    end
+end
+
+function expect_lte(lhs, rhs)
+    set_ltgt_failure()
+    failure.operation = _failure_conditions.lte
+    
+    if (type(lhs) ~= "number" or type(rhs) ~= "number") then
+        failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
 
-    else 
-        coroutine.yield(true)
+    else
+        coroutine.yield( (lhs <= rhs) )
     end
 end
 
 function expect_gte(lhs, rhs)
     failure.operation = _failure_conditions.gte
-    failure.num_arguments = 2
-    failure.arguments = {lhs, rhs}
-    failure.expected_types = {"number", "number"}
-    failure.line_num = debug.getinfo(2).currentline
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
 
-    elseif (not (lhs >= rhs)) then
-        coroutine.yield(false)
-
-    else 
-        coroutine.yield(true)
+    else
+        coroutine.yield( (lhs >= rhs) )
     end
-end
+end 
 
-function expect_inrange(val, lower, upper)
-    failure.operation = _failure_conditions.inrange
+local function set_inrange_failure()
     failure.num_arguments = 3
     failure.arguments = {val, lower, upper}
     failure.expected_types = {"number", "number", "number"}
     failure.line_num = debug.getinfo(2).currentline
+end
+
+local function _inrange(val, lower, upper)
+    return (val >= lower and val <= upper)
+end
+
+local function _inrange_strict(val, lower, upper)
+    return (val > lower and val < uppper)
+end
+
+function expect_inrange(val, lower, upper, strict)
+    set_inrange_failure()
+    failure.operation = _failure_conditions.inrange
 
     if (type(val) ~= "number" or type(lower) ~= "number" or type(upper) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
@@ -475,25 +459,82 @@ function expect_inrange(val, lower, upper)
             failure.additional_msg = ". invalid range, lower > upper"
             coroutine.yield(false)
 
-        elseif val >= lower and val <= upper then
-            coroutine.yield(true)
+        elseif (strict == true) then
+            coroutine.yield( _inrange_strict(val, lower, upper) )
 
-        else
-            coroutine.yield(false)
+        else --anything other than true (and crucially nil) is considered to be not strict
+            coroutine.yield( _inrange(val, lower, upper) )
         end
     end
 end
 
-function expect_not_inrange(val, lower, upper)
+function expect_not_inrange(val, lower, upper, strict) --ADD TESTS
+    set_inrange_failure()
+    failure.operation = _failure_conditions.not_inrange
 
+    if (type(val) ~= "number" or type(lower) ~= "number" or type(upper) ~= "number") then
+        failure.arg_error = _failure_conditions.badtype
+        coroutine.yield(false)
+
+    else
+        if (lower > upper) then
+            failure.additional_msg = ". invalid range, lower > upper"
+            coroutine.yield(false)
+
+        elseif (strict == true) then
+            coroutine.yield( not _inrange_strict(val, lower, upper) )
+
+        else --anything other than true (and crucially nil) is considered to be not strict
+            coroutine.yield( not _inrange(val, lower, upper) )
+        end
+    end
 end
 
-function expect_contains(table, val)
-    failure.operation = _failure_conditions.contains
+--expect contains
+
+local function set_contains_failure()
     failure.num_arguments = 2
     failure.arguments = {table, val}
     failure.expected_types = {"table", "non-nil"}
     failure.line_num = debug.getinfo(2).currentline
+end
+
+local function _contains(table, val)
+    local found = false
+
+    if (type(val) == "table") then
+        found = search_table(table, val)
+        return found
+    
+    else
+        for _,v in pairs(table) do
+            if v == val then found = true end
+        end
+
+        return found
+    end
+end
+
+function expect_contains(table, val)
+    set_contains_failure()
+    failure.operation = _failure_conditions.contains
+
+    if type(table) ~= "table" then
+        failure.arg_error = _failure_conditions.badtype
+        coroutine.yield(false)
+
+    elseif type(val) == "nil" then
+        failure.arg_error = _failure_conditions.badtype
+        coroutine.yield(false)
+    
+    else
+        coroutine.yield( _contains(table, val) )
+    end
+end
+
+function expect_doesnt_contain(table, val)
+    set_contains_failure()
+    failure.operation = _failure_conditions.doesnt_contain
 
     if type(table) ~= "table" then
         failure.arg_error = _failure_conditions.badtype
@@ -503,144 +544,172 @@ function expect_contains(table, val)
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
 
-    elseif type(val) == "table" then
-        local found = search_table(table, val)
-        coroutine.yield(found)
-
     else
-        found = false
-        for _,v in pairs(table) do
-            if v == val then found = true end
-        end
-        if not found then
-            coroutine.yield(false)
-
-        else
-            coroutine.yield(true)
-        end
+        coroutine.yield( not _contains(table, val) )
     end
 end
 
-function expect_doesnt_contain(table, val)
+--expect_type
 
-end
-
-function expect_type(value, type)
-    failure.operation = _failure_conditions.type
+local function set_type_failure()
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"any", "type-string"}
     failure.line_num = debug.getinfo(2).currentline
+end
+
+function expect_type(value, type)
+    set_type_failure()
+    failure.operation = _failure_conditions.type
 
     if (type(type) ~= "string") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
-
-    elseif (not (lhs >= rhs)) then
-        coroutine.yield(false)
-
-    else 
-        coroutine.yield(true)
+    
+    else
+        coroutine.yield( type(value) == type )
     end
 end
 
 function expect_not_type(value, type)
+    set_type_failure()
+    failure.operation = _failure_conditions.not_type
 
+    if (type(type) ~= "string") then
+        failure.arg_error = _failure_conditions.badtype
+        coroutine.yield(false)
+    
+    else
+        coroutine.yield( type(value) ~= type )
+    end
 end
 
+
+--expect_error
 --I really doubt whether there is a use case for expecdt_error/noerror, but I will leave them in for now
-function expect_error(func, ...)
-    failure.operation = _failure_conditions.error
+
+local function set_error_failure()
     failure.num_arguments = 1
     failure.arguments = {func}
     failure.expected_types = {"function"}
     failure.line_num = debug.getinfo(2).currentline
+end
+
+local function _noerror(func, ...)
+    success = pcall(func, ...)
+    return success
+end
+
+function expect_error(func, ...)
+    set_error_failure()
+    failure.operation = _failure_conditions.error
 
     if (type(func) ~= "function") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
     else
-        success = pcall(func, ...)
-        if not success then 
-            coroutine.yield(true)
-
-        else
-            coroutine.yield(false)
-        end
+        coroutine.yield( not _noerror(func, ...) )
     end
 end
 
 function expect_noerror(func, ...)
+    set_error_failure()
     failure.operation = _failure_conditions.noerror
-    failure.num_arguments = 1
-    failure.arguments = {func}
-    failure.expected_types = {"function"}
-    failure.line_num = debug.getinfo(2).currentline
 
     if (type(func) ~= "function") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
     else
-        success = pcall(func, ...)
-        if success then
-            coroutine.yield(true)
-    
-        else
-            coroutine.yield(false)
-        end
+        coroutine.yield( _noerror(func, ...) )
     end
 end
 
+--expect close
 --optional hardcore challenge: expect_close for strings allowing for a certain number of different characters
-function expect_close(value, target, magnitudeDif)
-    failure.operation = _failure_conditions.close
+
+local function set_close_failure()
     failure.num_arguments = 3
     failure.arguments = {value, target, target * magnitudeDif}
     failure.expected_types = {"number", "number", "number"}
     failure.line_num = debug.getinfo(2).currentline
+end
+
+local function _close(value, target, magnitudeDif)
+    --normalize args
+    if magnitudeDif < 0 then magnitudeDif = magnitudeDif * -1 end
+
+    local allowedDif = target * magnitudeDif
+    --local realValDif = adjustedVal - target
+
+    if (target == 0) then
+        allowedDif = target + magnitudeDif --FLAG: add a note about this and unit tests!
+    end
+
+    if (target >= 0) then
+        return ((value >= (target - allowedDif)) and (value <= (target + allowedDif)))
+    else
+        return ((value <= (target - allowedDif)) and (value >= (target + allowedDif)))
+    end
+end
+
+function expect_close(value, target, magnitudeDif)
+    set_close_failure()
+    failure.operation = _failure_conditionsio.close
 
     if type(value) ~= "number" or type(target) ~= "number" or type(magnitudeDif) ~= "number" then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
     
     else
-        --normalize args
-        if magnitudeDif < 0 then magnitudeDif = magnitudeDif * -1 end
-
-        local allowedDif = target * magnitudeDif
-        --local realValDif = adjustedVal - target
-        if target >= 0 then
-            if value >= target - allowedDif and value <= target + allowedDif  then
-                coroutine.yield(true)
-            else 
-                coroutine.yield(false)
-            end
-        else
-            if value <= target - allowedDif and value >= target + allowedDif  then
-                coroutine.yield(true)
-            else 
-                coroutine.yield(false)
-            end
-        end
+        coroutine.yield( _close(value, target, magnitudeDif) )
     end
 end
 
-function expect(expression) 
-    failure.operation = _failure_conditions.istrue
+function expect_not_close()
+    set_close_failure()
+    failure.operation = _failure_conditionsio.not_close
+
+    if type(value) ~= "number" or type(target) ~= "number" or type(magnitudeDif) ~= "number" then
+        failure.arg_error = _failure_conditions.badtype
+        coroutine.yield(false)
+    
+    else
+        coroutine.yield( not _close(value, target, magnitudeDif) )
+    end
+end
+
+--expect
+
+local function set_tf_failure()
     failure.num_arguments = 1
     failure.arguments = {expression}
     failure.expected_types = {"bool"}
     failure.line_num = debug.getinfo(2).currentline
+end
+
+function expect_true(expression)
+    set_tf_failure()
+    failure.operation = _failure_conditions.istrue
 
     if (type(expression) ~= "boolean") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
 
-    elseif (not expression) then
+    else
+        coroutine.yield( expression )
+    end
+end
+
+function expect_false(expression)
+    set_tf_failure()
+    failure.operation = _failure_conditions.isfalse
+
+    if (type(expression) ~= "boolean") then
+        failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
 
-    else 
-        coroutine.yield(true)
+    else
+        coroutine.yield( not expression )
     end
 end
 
