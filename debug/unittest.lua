@@ -276,7 +276,7 @@ function run_all_tests()
             else
                 io.write(red, "FAILED", endcolor, "\n")
                 for _,err_msg in ipairs(failure_log) do
-                    io.write(yellow, err_msg, endcolor, "\n")
+                    io.write(yellow, err_msg, endcolor, "\n\n")
                 end
             end
         else
@@ -373,7 +373,7 @@ end
 
 --expect less-than/greater-than
 
-local function set_ltgt_failure()
+local function set_ltgt_failure(lhs, rhs)
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"number", "number"} 
@@ -381,7 +381,7 @@ local function set_ltgt_failure()
 end
 
 function expect_lt(lhs, rhs)
-    set_ltgt_failure()
+    set_ltgt_failure(lhs, rhs)
     failure.operation = _failure_conditions.lt
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
@@ -394,7 +394,7 @@ function expect_lt(lhs, rhs)
 end
 
 function expect_gt(lhs, rhs)
-    set_ltgt_failure()
+    set_ltgt_failure(lhs, rhs)
     failure.operation = _failure_conditions.gt
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
@@ -407,7 +407,7 @@ function expect_gt(lhs, rhs)
 end
 
 function expect_lte(lhs, rhs)
-    set_ltgt_failure()
+    set_ltgt_failure(lhs, rhs)
     failure.operation = _failure_conditions.lte
     
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
@@ -420,7 +420,9 @@ function expect_lte(lhs, rhs)
 end
 
 function expect_gte(lhs, rhs)
+    set_ltgt_failure(lhs, rhs)
     failure.operation = _failure_conditions.gte
+    failure.line_num = debug.getinfo(2).currentline
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
@@ -431,7 +433,7 @@ function expect_gte(lhs, rhs)
     end
 end 
 
-local function set_inrange_failure()
+local function set_inrange_failure(val, lower, upper)
     failure.num_arguments = 3
     failure.arguments = {val, lower, upper}
     failure.expected_types = {"number", "number", "number"}
@@ -447,7 +449,7 @@ local function _inrange_strict(val, lower, upper)
 end
 
 function expect_inrange(val, lower, upper, strict)
-    set_inrange_failure()
+    set_inrange_failure(val, lower, upper)
     failure.operation = _failure_conditions.inrange
 
     if (type(val) ~= "number" or type(lower) ~= "number" or type(upper) ~= "number") then
@@ -469,7 +471,7 @@ function expect_inrange(val, lower, upper, strict)
 end
 
 function expect_not_inrange(val, lower, upper, strict) --ADD TESTS
-    set_inrange_failure()
+    set_inrange_failure(val, lower, upper)
     failure.operation = _failure_conditions.not_inrange
 
     if (type(val) ~= "number" or type(lower) ~= "number" or type(upper) ~= "number") then
@@ -492,7 +494,7 @@ end
 
 --expect contains
 
-local function set_contains_failure()
+local function set_contains_failure(table, val)
     failure.num_arguments = 2
     failure.arguments = {table, val}
     failure.expected_types = {"table", "non-nil"}
@@ -516,7 +518,7 @@ local function _contains(table, val)
 end
 
 function expect_contains(table, val)
-    set_contains_failure()
+    set_contains_failure(table, val)
     failure.operation = _failure_conditions.contains
 
     if type(table) ~= "table" then
@@ -533,7 +535,7 @@ function expect_contains(table, val)
 end
 
 function expect_doesnt_contain(table, val)
-    set_contains_failure()
+    set_contains_failure(table, val)
     failure.operation = _failure_conditions.doesnt_contain
 
     if type(table) ~= "table" then
@@ -551,15 +553,15 @@ end
 
 --expect_type
 
-local function set_type_failure()
+local function set_type_failure(value, type)
     failure.num_arguments = 2
-    failure.arguments = {lhs, rhs}
+    failure.arguments = {value, type}
     failure.expected_types = {"any", "type-string"}
     failure.line_num = debug.getinfo(2).currentline
 end
 
 function expect_type(value, type)
-    set_type_failure()
+    set_type_failure(value, type)
     failure.operation = _failure_conditions.type
 
     if (type(type) ~= "string") then
@@ -572,7 +574,7 @@ function expect_type(value, type)
 end
 
 function expect_not_type(value, type)
-    set_type_failure()
+    set_type_failure(value, type)
     failure.operation = _failure_conditions.not_type
 
     if (type(type) ~= "string") then
@@ -588,7 +590,7 @@ end
 --expect_error
 --I really doubt whether there is a use case for expecdt_error/noerror, but I will leave them in for now
 
-local function set_error_failure()
+local function set_error_failure(func)
     failure.num_arguments = 1
     failure.arguments = {func}
     failure.expected_types = {"function"}
@@ -601,7 +603,7 @@ local function _noerror(func, ...)
 end
 
 function expect_error(func, ...)
-    set_error_failure()
+    set_error_failure(func)
     failure.operation = _failure_conditions.error
 
     if (type(func) ~= "function") then
@@ -613,7 +615,7 @@ function expect_error(func, ...)
 end
 
 function expect_noerror(func, ...)
-    set_error_failure()
+    set_error_failure(func)
     failure.operation = _failure_conditions.noerror
 
     if (type(func) ~= "function") then
@@ -627,7 +629,7 @@ end
 --expect close
 --optional hardcore challenge: expect_close for strings allowing for a certain number of different characters
 
-local function set_close_failure()
+local function set_close_failure(value, target, magnitudeDif)
     failure.num_arguments = 3
     failure.arguments = {value, target, target * magnitudeDif}
     failure.expected_types = {"number", "number", "number"}
@@ -653,8 +655,8 @@ local function _close(value, target, magnitudeDif)
 end
 
 function expect_close(value, target, magnitudeDif)
-    set_close_failure()
-    failure.operation = _failure_conditionsio.close
+    set_close_failure(value, target, magnitudeDif)
+    failure.operation = _failure_conditions.close
 
     if type(value) ~= "number" or type(target) ~= "number" or type(magnitudeDif) ~= "number" then
         failure.arg_error = _failure_conditions.badtype
@@ -666,7 +668,7 @@ function expect_close(value, target, magnitudeDif)
 end
 
 function expect_not_close()
-    set_close_failure()
+    set_close_failure(value, target, magnitudeDif)
     failure.operation = _failure_conditionsio.not_close
 
     if type(value) ~= "number" or type(target) ~= "number" or type(magnitudeDif) ~= "number" then
@@ -680,7 +682,7 @@ end
 
 --expect
 
-local function set_tf_failure()
+local function set_tf_failure(expression)
     failure.num_arguments = 1
     failure.arguments = {expression}
     failure.expected_types = {"bool"}
@@ -688,7 +690,7 @@ local function set_tf_failure()
 end
 
 function expect_true(expression)
-    set_tf_failure()
+    set_tf_failure(expression)
     failure.operation = _failure_conditions.istrue
 
     if (type(expression) ~= "boolean") then
@@ -701,7 +703,7 @@ function expect_true(expression)
 end
 
 function expect_false(expression)
-    set_tf_failure()
+    set_tf_failure(expression)
     failure.operation = _failure_conditions.isfalse
 
     if (type(expression) ~= "boolean") then

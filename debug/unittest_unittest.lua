@@ -560,39 +560,39 @@ end
 
 --
 --expect
-tests["expect_passing"] = function ()
-    expect(5 == 5)
-    expect(true)
-    expect(type("s") == "string")
+tests["expect_true_passing"] = function ()
+    expect_true(5 == 5)
+    expect_true(true)
+    expect_true(type("s") == "string")
 end
 
 tests["expect_failing1"] = function ()
-    local function f() expect(false) end
+    local function f() expect_true(false) end
     expect_failure(f, _failure_conditions.istrue)
 end
 
 tests["expect_failing2"] = function ()
-    local function f() expect(5 == 6) end
+    local function f() expect_true(5 == 6) end
     expect_failure(f, _failure_conditions.istrue)
 end
 
 tests["expect_failing3"] = function ()
-    local function f() expect(type(5) == "string") end
+    local function f() expect_true(type(5) == "string") end
     expect_failure(f, _failure_conditions.istrue)
 end
 
 tests["expect_failing_badtype"] = function ()
-    local function f() expect({1,2,3}) end
+    local function f() expect_true({1,2,3}) end
     expect_failure(f, _failure_conditions.badtype)
 end
 
 tests["expect_failing_badtype2"] = function ()
-    local function f() expect("string") end
+    local function f() expect_true("string") end
     expect_failure(f, _failure_conditions.badtype)
 end
 
 tests["expect_failing_error"] = function ()
-    local function f() expect(a.b.c.d) end
+    local function f() expect_true(a.b.c.d) end
     expect_failure(f)
 end
 --]]
@@ -630,7 +630,7 @@ end
 tests["close_failing"] = function ()
     local function f1() expect_close(0.9, 1, 0.01) end
     local function f2() expect_close(-5, -2, 1) end
-    local function f3() expect_close(0.01, 0, 1000) end
+    local function f3() expect_close(0.01, 0, 0.001) end
     expect_failure(f1)
     expect_failure(f2)
     expect_failure(f3)

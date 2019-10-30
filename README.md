@@ -5,6 +5,7 @@ UNFINISHED WORK IN PROGRESS
 
 # TODO:
 - refactor to move common code into helper functions, to reduce reused code
+    -  need to put line_num inside of expect_<> functions
 - add PASS() FAIL() "macro"?
 - complete not_type, doesnt_contain, not_inrange expect functions
 - consolodate multiple 'failing' tests into single tests where it makes sense
