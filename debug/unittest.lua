@@ -323,13 +323,27 @@ local function check_tables(ltable, rtable)
     return are_equal
 end
 
-local function search_table(table, tval)
+local function search_table(table, val)
     local found = false
     for _,v in pairs(table) do
-        if type(v) == "table" then
+        if (type(v) == "table") then
+            found = search_table(v, val)
+        else
+            if (v == val) then
+                return true
+            end
+        end
+    end
+    return found
+end
+
+local function search_tablet(table, tval)
+    local found = false
+    for _,v in pairs(table) do
+        if (type(v) == "table") then
             found = check_tables(v, tval)
-            if not found then 
-                found = search_table(v, tval)
+            if (not found) then 
+                found = search_tablet(v, tval)
             else
                 return true
             end
@@ -346,7 +360,7 @@ local function _eq(lhs, rhs) --not set_eq_failure() needed because there is no y
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"any", "any"}
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 
     if (type(lhs) ~= type(rhs)) then
         failure.arg_error = _failure_conditions.difftypes
@@ -377,7 +391,7 @@ local function set_ltgt_failure(lhs, rhs)
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"number", "number"} 
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 end
 
 function expect_lt(lhs, rhs)
@@ -437,7 +451,7 @@ local function set_inrange_failure(val, lower, upper)
     failure.num_arguments = 3
     failure.arguments = {val, lower, upper}
     failure.expected_types = {"number", "number", "number"}
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 end
 
 local function _inrange(val, lower, upper)
@@ -498,21 +512,18 @@ local function set_contains_failure(table, val)
     failure.num_arguments = 2
     failure.arguments = {table, val}
     failure.expected_types = {"table", "non-nil"}
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 end
 
 local function _contains(table, val)
     local found = false
 
     if (type(val) == "table") then
-        found = search_table(table, val)
+        found = search_tablet(table, val)
         return found
     
     else
-        for _,v in pairs(table) do
-            if v == val then found = true end
-        end
-
+        found = search_table(table, val)
         return found
     end
 end
@@ -557,32 +568,32 @@ local function set_type_failure(value, type)
     failure.num_arguments = 2
     failure.arguments = {value, type}
     failure.expected_types = {"any", "type-string"}
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 end
 
-function expect_type(value, type)
-    set_type_failure(value, type)
+function expect_type(value, t)
+    set_type_failure(value, t)
     failure.operation = _failure_conditions.type
 
-    if (type(type) ~= "string") then
+    if (type(t) ~= "string") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
     
     else
-        coroutine.yield( type(value) == type )
+        coroutine.yield( type(value) == t )
     end
 end
 
-function expect_not_type(value, type)
-    set_type_failure(value, type)
+function expect_not_type(value, t)
+    set_type_failure(value, t)
     failure.operation = _failure_conditions.not_type
 
-    if (type(type) ~= "string") then
+    if (type(t) ~= "string") then
         failure.arg_error = _failure_conditions.badtype
         coroutine.yield(false)
     
     else
-        coroutine.yield( type(value) ~= type )
+        coroutine.yield( type(value) ~= t )
     end
 end
 
@@ -594,7 +605,7 @@ local function set_error_failure(func)
     failure.num_arguments = 1
     failure.arguments = {func}
     failure.expected_types = {"function"}
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 end
 
 local function _noerror(func, ...)
@@ -633,7 +644,7 @@ local function set_close_failure(value, target, magnitudeDif)
     failure.num_arguments = 3
     failure.arguments = {value, target, target * magnitudeDif}
     failure.expected_types = {"number", "number", "number"}
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 end
 
 local function _close(value, target, magnitudeDif)
@@ -667,9 +678,9 @@ function expect_close(value, target, magnitudeDif)
     end
 end
 
-function expect_not_close()
+function expect_not_close(value, target, magnitudeDif)
     set_close_failure(value, target, magnitudeDif)
-    failure.operation = _failure_conditionsio.not_close
+    failure.operation = _failure_conditions.not_close
 
     if type(value) ~= "number" or type(target) ~= "number" or type(magnitudeDif) ~= "number" then
         failure.arg_error = _failure_conditions.badtype
@@ -686,7 +697,7 @@ local function set_tf_failure(expression)
     failure.num_arguments = 1
     failure.arguments = {expression}
     failure.expected_types = {"bool"}
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 end
 
 function expect_true(expression)

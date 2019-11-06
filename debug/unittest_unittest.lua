@@ -24,7 +24,7 @@ load_modules()
 tests["expect_eq_passing"] = function ()
    
     --basic int volume
-    for i=0, 1000 do
+    for i=-1000, 1000 do
         expect_eq(i,i)
     end
 
@@ -44,6 +44,13 @@ tests["expect_eq_passing"] = function ()
 
     --types nil
     expect_eq(nil, nil)
+
+    --types function
+    local function f() return 1 end
+    expect_eq(f, f)
+
+    --floats --NOTE: floats are not always eq because of their representation
+    expect_eq(3.14, 3.14)
 end
 
 tests["expect_eq_failing"] = function ()
@@ -85,6 +92,12 @@ tests["expect_eq_failing"] = function ()
     for i=0, 1000 do
         expect_failure(f8, _failure_conditions.failure, i, i+1)
     end
+
+    --FUNCTIONALY (haha get it?) the same function but not the same
+    local function t() return 1 end
+    local function t1() return 1 end
+    local function f9() expect_eq(t1, t) end
+    expect_failure(f9)
 end
 
 tests["expect_eq_table_passing"] = function ()
@@ -123,7 +136,7 @@ tests["expect_eq_table_failing"] = function ()
     local function f11() expect_eq({{2},{2},{2},{2},{2},{2},{2},{2}}, {{2},{2},{2},{2},{2},{2},{2}}) end --size + nested tables
     expect_failure(f11, _failure_conditions.eq)
     local function f12() expect_eq({{3,3},{3,3}}, {{3},{3}}) end --sizeof nested tables
-    expect_failure(f12, _failure_conditions.eq)--]]
+    expect_failure(f12, _failure_conditions.eq)
 
     --standard diff
     local function f2() expect_eq({1,2,3}, {1,2,4}) end 
@@ -164,7 +177,7 @@ end
 tests["expect_ne_passing"] = function ()
     
     --string diffs
-    expect_ne("String", "string") --capital diff
+    expect_ne("Amazin", "amazin") --capital diff
     expect_ne("amazin", "amazin ") --whitespace diff
     expect_ne("amazin\n", "amazin") --newline diff
     expect_ne(type("5"), type(5)) --type return diff
@@ -271,44 +284,37 @@ end
 --
 --expect_lt
 tests["expect_lt_passing"] = function ()
+    --basic
     expect_lt(4,5)
     expect_lt(0,1)
     expect_lt(-1, 0)
     expect_lt(-1,1)
-end
 
-tests["expect_lt_passing_volume"] = function ()
+    --volume
     for i=0,1000 do
         expect_lt(i, i+1)
     end
 end
 
-tests["expect_lt_failing1_nonnum"] = function ()
+tests["expect_lt_failing"] = function ()
+    --bad arg, non-num
     local function f() expect_lt("5", 6) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_lt_failing1_nonnum2"] = function ()
     local function f() expect_lt("5", "6") end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_lt_failing_nonnum3"] = function ()
     local function f() expect_lt(true, 2) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_lt_failing1"] = function ()
+    --basic
     local function f() expect_lt(1,1) end
     expect_failure(f, _failure_conditions.lt)
-end
 
-tests["expect_lt_failing2"] = function ()
     local function f() expect_lt(1,0) end
     expect_failure(f, _failure_conditions.lt)
-end
 
-tests["expect_lt_failing_volume"] = function ()
+    --failing volume
     local function f(i,j) expect_lt(i,j) end
     for i=0,1000 do
         expect_failure(f, _failure_conditions.failure, i, i)
@@ -328,40 +334,35 @@ tests["expect_lte_passing"] = function ()
     expect_lte(-1, 0)
     expect_lte(0, 0)
     expect_lte(-1, -1)
-end
 
-tests["expect_lte_passing_volume"] = function ()
+    --volume
     for i=0, 1000 do
         expect_lte(i, i+1)
     end
     for i=0, 1000 do
         expect_lte(i, i)
     end
+
 end
 
-tests["expect_lte_failing1"] = function ()
+tests["expect_lte_failing"] = function ()
+    --bad types
     local function f() expect_lte("5", 6) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_lte_failing2"] = function ()
     local function f() expect_lte(true, 0) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_lte_failing3"] = function ()
+    --basic
     local function f() expect_lte(1,0) end
     expect_failure(f, _failure_conditions.lte) 
-end
 
-tests["expect_lte_failing4"] = function ()
     local function f() expect_lte(5,4) end
     expect_failure(f, _failure_conditions.lte)
-end
 
-tests["expect_lte_failing_volume"] = function ()
+    --volume
     local function f(i,j) expect_lte(i,j) end
-    for i=0,1000 do
+    for i=-1000,1000 do
         expect_failure(f, _failure_conditions.failure, i+1, i)
     end
 end
@@ -375,45 +376,35 @@ tests["expect_gt_passing"] = function ()
     expect_gt(1,-1)
     expect_gt(5,4)
     expect_gt(1.001, 1)
-end
 
-tests["expect_gt_passing_volume"] = function ()
+    --volume
     for i=0,1000 do
         expect_gt(i+1, i)
     end
 end
 
-tests["expect_gt_failing1"] = function ()
+tests["expect_gt_failing"] = function ()
+    --bad types
     local function f() expect_gt(true, 1) end 
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_gt_failing2"] = function ()
     local function f() expect_gt("6", 5) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_gt_failing3"] = function ()
+    --basic
     local function f() expect_gt(5, 6) end
     expect_failure(f, _failure_conditions.gt)
-end
 
-tests["expect_gt_failing4"] = function ()
     local function f() expect_gt(1, 1.00001) end
     expect_failure(f, _failure_conditions.gt)
-end
 
-tests["expect_gt_failing5"] = function ()
     local function f() expect_gt(1,1) end
     expect_failure(f, _failure_conditions.gt) 
-end
 
-tests["expect_gt_failing6"] = function ()
     local function f() expect_gt(-1,-1) end
     expect_failure(f, _failure_conditions.gt)
-end
 
-tests["expect_gt_failing_volume"] = function ()
+    --volume
     local function f(i,j) expect_gt(i,j) end
     for i=0,1000 do
         expect_failure(f, _failure_conditions.failure, i, i)
@@ -432,9 +423,8 @@ tests["expect_gte_passing"] = function ()
     expect_gte(1,1)
     expect_gte(1,1)
     expect_gte(-1,-1)
-end
 
-tests["expect_gte_passing_volume"] = function ()
+    --volume
     for i=0,1000 do
         expect_gte(i,i)
     end
@@ -443,27 +433,24 @@ tests["expect_gte_passing_volume"] = function ()
     end
 end
 
-tests["expect_gte_failing1"] = function ()
+tests["expect_gte_failing"] = function ()
+    --bad types
     local function f() expect_gt(true, 1) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_gte_failing2"] = function ()
     local function f() expect_gt("6", 5) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_gte_failing3"] = function ()
+    --basic
     local function f() expect_gte(5, 6) end
     expect_failure(f, _failure_conditions.gte)
-end
 
-tests["expect_gte_failing4"] = function ()
+    local function f() expect_gte(5, 6) end
+    expect_failure(f, _failure_conditions.gte)
+
     local function f() expect_gte(1, 1.00001) end
     expect_failure(f, _failure_conditions.gte)
-end
 
-tests["expect_gte_failing5"] = function ()
     local function f() expect_gte(77, 77.1) end
     expect_failure(f, _failure_conditions.gte)
 end
@@ -490,37 +477,31 @@ function noerr_func()
 end
 
 tests["expect_error_passing"] = function ()
+    --basic
     expect_error(err_func)
     expect_error(err_func2)
-end
 
-tests["expect_error_passing_multargs"] = function ()
+    --multiple args
     local function f(a,b,c) local d = a*b*c; return d end
     expect_error(f, "ha!", "lol", "no")
 end
 
-tests["expect_error_failing_multargs"] = function ()
+tests["expect_error_failing"] = function ()
+    --multiple args
     local function f(a,b,c) local d = a*b*c; return d end
     local function f1() expect_error(f, 5, 6, 7) end
     expect_failure(f1, _failure_conditions.error)
-end
 
-tests["expect_error_failing"] = function ()
+    --basic
     local function f() expect_error(noerr_func) end
     expect_failure(f, _failure_conditions.error) 
-end
 
-tests["expect_error_failing2"] = function ()
     local function f() expect_error(true) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_error_failing3"] = function ()
     local function f() expect_error(10) end
     expect_failure(f, _failure_conditions.badtype) 
-end
 
-tests["expect_error_failing4"] = function ()
     local function f() expect_error("string") end
     expect_failure(f, _failure_conditions.badtype)
 end
@@ -532,74 +513,74 @@ tests["expect_noerror_passing"] = function ()
     expect_noerror(noerr_func)
 end
 
-tests["expect_noerror_failing1"] = function ()
+tests["expect_noerror_failing"] = function ()
+    --basic
     local function f() expect_noerror(err_func) end
     expect_failure(f, _failure_conditions.noerror)
-end
 
-tests["expect_noerror_failing2"] = function ()
     local function f() expect_noerror(err_func2) end
     expect_failure(f, _failure_conditions.noerror)
-end
 
-tests["expect_noerror_failing3"] = function ()
     local function f() expect_noerror(4) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_noerror_failing4"] = function ()
     local function f() expect_noerror(true) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_noerror_failing5"] = function ()
     local function f() expect_noerror("string") end
     expect_failure(f, _failure_conditions.badtype)
 end
 --]]
 
 --
---expect
+--expect_true/false
 tests["expect_true_passing"] = function ()
     expect_true(5 == 5)
     expect_true(true)
     expect_true(type("s") == "string")
 end
 
-tests["expect_failing1"] = function ()
+tests["expect_failing"] = function ()
+    --basic
     local function f() expect_true(false) end
     expect_failure(f, _failure_conditions.istrue)
-end
 
-tests["expect_failing2"] = function ()
     local function f() expect_true(5 == 6) end
     expect_failure(f, _failure_conditions.istrue)
-end
 
-tests["expect_failing3"] = function ()
     local function f() expect_true(type(5) == "string") end
     expect_failure(f, _failure_conditions.istrue)
-end
 
-tests["expect_failing_badtype"] = function ()
+    --bad type
     local function f() expect_true({1,2,3}) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_failing_badtype2"] = function ()
     local function f() expect_true("string") end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_failing_error"] = function ()
     local function f() expect_true(a.b.c.d) end
     expect_failure(f)
+end
+
+tests.expect_false_passing = function ()
+    expect_false(5 > 6)
+    expect_false(5 == 6)
+    expect_false(false)
+end
+
+tests.expect_false_failing = function ()
+    local function f() expect_false(true) end
+    local function f1() expect_false(5 < 6) end
+
+    expect_failure(f)
+    expect_failure(f1)
 end
 --]]
 
 --
 --close
 tests["close_passing"] = function ()
+    --basic
     expect_close(0.9, 1, 0.2)
     expect_close(0.2, 1, 0.8)
     expect_close(-1, -2, 0.5)
@@ -612,6 +593,7 @@ tests["close_passing"] = function ()
 end
 
 tests["close_failing_badtype"] = function ()
+    --basic
     local function f1() expect_close(1,2,"2") end
     local function f2() expect_close(1,"2",2) end
     local function f3() expect_close("1",2,2) end
@@ -625,9 +607,8 @@ tests["close_failing_badtype"] = function ()
     expect_failure(f4)
     expect_failure(f5)
     expect_failure(f6)
-end
 
-tests["close_failing"] = function ()
+    --basic
     local function f1() expect_close(0.9, 1, 0.01) end
     local function f2() expect_close(-5, -2, 1) end
     local function f3() expect_close(0.01, 0, 0.001) end
@@ -636,14 +617,47 @@ tests["close_failing"] = function ()
     expect_failure(f3)
 end
 
---[[tests["close_failing"] = function ()
-    expect_close(0.9, 1, 0.01)
+tests.expect_not_close_passing = function ()
+    --basic
+    expect_not_close(0.5, 1, 0.2)
+    expect_not_close(0.1, 1, 0.8)
+    expect_not_close(-0.5, -2, 0.5)
+    expect_not_close(-0.5, -2, -0.5)
+    expect_not_close(0.1, 1, -0.8)
+    expect_not_close(20, 1, -0.2)
+    expect_not_close(1080, 1000, 0.06)
+    expect_not_close(15, 9, 0.15)
+    expect_not_close(12, 10, 0.1)
+end
+
+tests.expect_not_close_failing = function ()
+    --basic
+    local function f() expect_not_close(0.9, 1, 0.2) end
+    local function f1() expect_not_close(0.2, 1, 0.8) end
+    local function f2() expect_not_close(-1, -2, 0.5) end
+    local function f3() expect_not_close(-1, -2, -0.5) end
+    local function f4() expect_not_close(0.2, 1, -0.8) end
+    local function f5() expect_not_close(0.9, 1, -0.2) end
+    local function f6() expect_not_close(1050, 1000, 0.06) end
+    local function f7() expect_not_close(10, 9, 0.15) end
+    local function f8() expect_not_close(11, 10, 0.1) end
+
+    expect_failure(f)
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+    expect_failure(f4)
+    expect_failure(f5)
+    expect_failure(f6)
+    expect_failure(f7)
+    expect_failure(f8)
 end
 --]]
 
 --
 --inrange
 tests["expect_inrange_passing"] = function ()
+    --basic
     expect_inrange(5, 4,6)
     expect_inrange(0, -1,1)
     expect_inrange(0, 0,0)
@@ -651,32 +665,25 @@ tests["expect_inrange_passing"] = function ()
 end
 
 tests["expect_inrange_failing"] = function ()
+    --basic
     local function f() expect_inrange(2, 0,1) end
     expect_failure(f, _failure_conditions.inrange)
-end
 
-tests["expect_inrange_failing2"] = function ()
     local function f() expect_inrange(-1, -4, -3) end
     expect_failure(f, _failure_conditions.inrange)
-end
 
-tests["expect_inrange_failing3"] = function ()
+    --bad range
     local function f() expect_inrange(1, 4, 3) end
     expect_failure(f, _failure_conditions.inrange)
-end
 
-tests["expect_inrange_failing4"] = function ()
+    --bad type
+    local function f() expect_inrange(1, 0, true) end
+    expect_failure(f, _failure_conditions.badtype)
+
     local function f() expect_inrange("str", 0,1) end
     expect_failure(f, _failure_conditions.badtype)
-end
 
-tests["expect_inrange_failing4"] = function ()
     local function f() expect_inrange(1, "str", 0) end
-    expect_failure(f, _failure_conditions.badtype)
-end
-
-tests["expect_inrange_failing5"] = function ()
-    local function f() expect_inrange(1, 0, true) end
     expect_failure(f, _failure_conditions.badtype)
 end
 --]]
@@ -684,6 +691,7 @@ end
 --
 --contains
 tests["expect_contains_passing"] = function ()
+    --basic
     expect_contains({1,2,3}, 1)
     expect_contains({1,2,3}, 2)
     expect_contains({1,2,3}, 3)
@@ -692,34 +700,39 @@ tests["expect_contains_passing"] = function ()
     expect_contains(t1, false)
     expect_contains(t1, 4)
     expect_contains(t1, "string")
+
+    --nested
+    t2 = {'a', 'b', 'c', {true, false, {3, 2, 1}}}
+    expect_contains(t2, 'a')
+    expect_contains(t2, 'b')
+    expect_contains(t2, 'c')
+    expect_contains(t2, true)
+    expect_contains(t2, false)
+    expect_contains(t2, 3)
+    expect_contains(t2, 2)
+    expect_contains(t2, 1)
 end
 
 tests["expect_contains_failing"] = function ()
+    --basic
     local function f() expect_contains({1,2,3}, 4) end
     expect_failure(f, _failure_conditions.contains)
-end
 
-tests["expect_contains_faling2"] = function ()
     local function f() expect_contains({nil}, nil) end
     expect_failure(f, _failure_conditions.contains)
-end
 
-tests["expect_contains_failing3"] = function ()
     local function f() expect_contains({true}, false) end
     expect_failure(f, _failure_conditions.contains)
-end
 
-tests["expect_contains_failing4"] = function ()
     local function f() expect_contains({}, "empty") end
     expect_failure(f, _failure_conditions.contains)
-end
 
-tests["expect_contains_failing5"] = function ()
     local function f() expect_contains({"tableu"}, {"tableu"}) end
     expect_failure(f, _failure_conditions.contains)
 end
 
 tests["expect_contains_table_passing"] = function ()
+    --basic
     expect_contains({true,{false}}, {false})
     expect_contains({{}},{})
 
@@ -733,15 +746,11 @@ tests["expect_contains_table_passing"] = function ()
 end
 
 tests["expect_contains_table_failing"] = function ()
+    --basic
     local t1 = {1,2, {1,2,3}}
     local t2 = {1,2}
     local function f() expect_contains(t1,t2) end
     expect_failure(f, _failure_conditions.contains)
-
-    local t3 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
-    local t4 =  {"super (not) sub table", "ye", 1}
-    local function f1() expect_contains(t3, t4) end
-    expect_failure(f1, _failure_conditions.contains)
 
     t5 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
     t6 = {"who dis?"}
@@ -754,7 +763,167 @@ tests["expect_contains_table_failing"] = function ()
     local function f4() expect_contains(t7,t7) end
     expect_failure(f3, _failure_conditions.contains)
     expect_failure(f4, _failure_conditions.contains)
+
+    --similar sub table
+    local t3 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
+    local t4 =  {"super (not) sub table", "ye", 1}
+    local function f1() expect_contains(t3, t4) end
+    expect_failure(f1, _failure_conditions.contains)
+end
+
+tests.expect_doesnt_contain_passing = function ()
+    --basic
+    expect_doesnt_contain({1,2, {1,2,3}}, 4)
+    expect_doesnt_contain({1}, 2)
+
+    --nested
+    expect_doesnt_contain({1,{2,{3,{4}}}}, 5)
+    expect_doesnt_contain({1,{2,{3,{4,{5,{6,{7,{8}}}}}}}}, 9)
+
+    --keys
+    expect_doesnt_contain({["k"] = 1}, "k")
+    expect_doesnt_contain({["k"] = {['one'] = 1}}, "one")
+
+end
+
+tests.expect_doesnt_contain_failing = function ()
+    local function f() expect_doesnt_contain({1,2,3}, 1) end
+    local function f1() expect_doesnt_contain({1,2,3}, 2) end
+    local function f2() expect_doesnt_contain({1,2,3}, 3) end
+    t1 = {true, false, 4, "string"}
+    local function f3() expect_doesnt_contain(t1, true) end
+    local function f4() expect_doesnt_contain(t1, false) end
+    local function f5() expect_doesnt_contain(t1, 4) end
+    local function f6() expect_doesnt_contain(t1, "string") end
+
+    t2 = {'a', 'b', 'c', {true, false, {3, 2, 1}}}
+    local function f7() expect_doesnt_contain('a') end
+    local function f8() expect_doesnt_contain('b') end
+    local function f9() expect_doesnt_contain('c') end
+    local function f10() expect_doesnt_contain(true) end
+    local function f11() expect_doesnt_contain(false) end
+    local function f12() expect_doesnt_contain(3) end
+    local function f13() expect_doesnt_contain(2) end
+    local function f14() expect_doesnt_contain(1) end
+
+    expect_failure(f, _failure_conditions.doesnt_contain)
+    expect_failure(f1, _failure_conditions.doesnt_contain)
+    expect_failure(f2, _failure_conditions.doesnt_contain)
+    expect_failure(f3, _failure_conditions.doesnt_contain)
+    expect_failure(f4, _failure_conditions.doesnt_contain)
+    expect_failure(f5, _failure_conditions.doesnt_contain)
+    expect_failure(f6, _failure_conditions.doesnt_contain)
+    expect_failure(f7, _failure_conditions.doesnt_contain)
+    expect_failure(f8, _failure_conditions.doesnt_contain)
+    expect_failure(f9, _failure_conditions.doesnt_contain)
+    expect_failure(f10, _failure_conditions.doesnt_contain)
+    expect_failure(f11, _failure_conditions.doesnt_contain)
+    expect_failure(f12, _failure_conditions.doesnt_contain)
+    expect_failure(f13, _failure_conditions.doesnt_contain)
+    expect_failure(f14, _failure_conditions.doesnt_contain)
+end
+
+tests.expect_doesnt_contain_table_passing = function ()
+    --similar
+    expect_doesnt_contain({1,{2,{3,{4}}}}, {3,{5}})
+    expect_doesnt_contain({1,{2,{3,{4,{5,{6,{7,{8}}}}}}}}, {2,{3,{4,{5,{6,{7,{9}}}}}}})
+
+    --basic
+    expect_doesnt_contain({1,2,3}, 4)
+    expect_doesnt_contain({'a', 'b', 'c'}, 'd')
+end
+
+tests.expect_doesnt_contain_table_failing = function ()
+    --basic
+    local t1 = {1,2, {1,2,3}}
+    local t2 = {1,2,3}
+    local function f() expect_doesnt_contain(t1,t2) end
+    expect_failure(f, _failure_conditions.doesnt_contain)
+
+    t5 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
+    t6 = {t5}
+    local function f2() expect_doesnt_contain(t6, t5) end
+    expect_failure(f2, _failure_conditions.doesnt_contain)
+
+    t7 = {{1,2,3}}
+    t8 = {1,2,3}
+    local function f3() expect_doesnt_contain(t7,t8) end
+    expect_failure(f3, _failure_conditions.doesnt_contain)
+
+    --similar sub table
+    local t3 = {"hello", ['needakey'] = true, {1,2,3, {"hi", ["k"] = {"super sub table", "ye", 1}}}, 2}
+    local t4 =  {"super sub table", "ye", 1}
+    local function f1() expect_doesnt_contain(t3, t4) end
+    expect_failure(f1, _failure_conditions.doesnt_contain)
 end
 --]]
+
+--
+--expect_type
+tests.expect_type_passing  = function ()
+    --basic
+    expect_type(5, "number")
+    expect_type("string", "string")
+    expect_type(nil, "nil")
+    expect_type({1,2,3}, "table")
+    local function f() return 1 end
+    expect_type(f, "function")
+end
+
+tests.expect_type_failing = function ()
+    --basic
+    local function f() return 1 end
+    local function f1() expect_type(5, "string") end
+    local function f2() expect_type("string", "table") end
+    local function f3() expect_type(nil, "number") end
+    local function f4() expect_type({1,2,3}, "function") end
+    local function f5() expect_type(f, "nil") end
+
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+    expect_failure(f4)
+    expect_failure(f5)
+
+    --bad type
+    local function f6() expect_type(5, 5) end
+    local function f7() expect_type(f, "this the type") end
+
+    expect_failure(f6)
+    expect_failure(f7)
+end
+
+tests.expect_not_type_passing = function ()
+    --basic
+    expect_not_type("string", "number")
+    expect_not_type(5, "string")
+    expect_not_type(nil, "function")
+    expect_not_type({1,2,3}, "number")
+    local function f() return 1 end
+    expect_not_type(f, "table")
+end
+
+tests.expect_not_type_failing = function ()
+    --basic
+    local function f() return 1 end
+    local function f1() expect_not_type(5, "number") end
+    local function f2() expect_not_type("string", "string") end
+    local function f3() expect_not_type(nil, "nil") end
+    local function f4() expect_not_type({1,2,3}, "table") end
+    local function f5() expect_not_type(f, "function") end
+
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+    expect_failure(f4)
+    expect_failure(f5)
+
+    --bad type
+    local function f6() expect_not_type(5, 5) end
+    local function f7() expect_not_type(f, f) end
+
+    expect_failure(f6)
+    expect_failure(f7)
+end
 
 start()
