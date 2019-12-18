@@ -451,204 +451,6 @@ end
 --]]
 
 --
---expect_error
-function err_func()
-    a.b.c = 10
-end
-
-function err_func2()
-    local c = "a" * "b"
-end
-
-function err_func3()
-    local a = {1} .. {2}
-end
-
-function noerr_func()
-    local c =  "a" .. "b"
-    local d = 9 * 8
-    local e = type(d)
-end
-
-tests["expect_error_passing"] = function ()
-    --basic
-    expect_error(err_func)
-    expect_error(err_func2)
-
-    --multiple args
-    local function f(a,b,c) local d = a*b*c; return d end
-    expect_error(f, "ha!", "lol", "no")
-end
-
-tests["expect_error_failing"] = function ()
-    --multiple args
-    local function f(a,b,c) local d = a*b*c; return d end
-    local function f1() expect_error(f, 5, 6, 7) end
-    expect_failure(f1, _failure_conditions.error)
-
-    --basic
-    local function f() expect_error(noerr_func) end
-    expect_failure(f, _failure_conditions.error) 
-
-    local function f() expect_error(true) end
-    expect_failure(f, _failure_conditions.badtype)
-
-    local function f() expect_error(10) end
-    expect_failure(f, _failure_conditions.badtype) 
-
-    local function f() expect_error("string") end
-    expect_failure(f, _failure_conditions.badtype)
-end
---]]
-
---
---noerror
-tests["expect_noerror_passing"] = function ()
-    expect_noerror(noerr_func)
-end
-
-tests["expect_noerror_failing"] = function ()
-    --basic
-    local function f() expect_noerror(err_func) end
-    expect_failure(f, _failure_conditions.noerror)
-
-    local function f() expect_noerror(err_func2) end
-    expect_failure(f, _failure_conditions.noerror)
-
-    local function f() expect_noerror(4) end
-    expect_failure(f, _failure_conditions.badtype)
-
-    local function f() expect_noerror(true) end
-    expect_failure(f, _failure_conditions.badtype)
-
-    local function f() expect_noerror("string") end
-    expect_failure(f, _failure_conditions.badtype)
-end
---]]
-
---
---expect_true/false
-tests["expect_true_passing"] = function ()
-    expect_true(5 == 5)
-    expect_true(true)
-    expect_true(type("s") == "string")
-end
-
-tests["expect_failing"] = function ()
-    --basic
-    local function f() expect_true(false) end
-    expect_failure(f, _failure_conditions.istrue)
-
-    local function f() expect_true(5 == 6) end
-    expect_failure(f, _failure_conditions.istrue)
-
-    local function f() expect_true(type(5) == "string") end
-    expect_failure(f, _failure_conditions.istrue)
-
-    --bad type
-    local function f() expect_true({1,2,3}) end
-    expect_failure(f, _failure_conditions.badtype)
-
-    local function f() expect_true("string") end
-    expect_failure(f, _failure_conditions.badtype)
-
-    local function f() expect_true(a.b.c.d) end
-    expect_failure(f)
-end
-
-tests.expect_false_passing = function ()
-    expect_false(5 > 6)
-    expect_false(5 == 6)
-    expect_false(false)
-end
-
-tests.expect_false_failing = function ()
-    local function f() expect_false(true) end
-    local function f1() expect_false(5 < 6) end
-
-    expect_failure(f)
-    expect_failure(f1)
-end
---]]
-
---
---close
-tests["close_passing"] = function ()
-    --basic
-    expect_close(0.9, 1, 0.2)
-    expect_close(0.2, 1, 0.8)
-    expect_close(-1, -2, 0.5)
-    expect_close(-1, -2, -0.5)
-    expect_close(0.2, 1, -0.8)
-    expect_close(0.9, 1, -0.2)
-    expect_close(1050, 1000, 0.06)
-    expect_close(10, 9, 0.15)
-    expect_close(11, 10, 0.1)
-end
-
-tests["close_failing_badtype"] = function ()
-    --basic
-    local function f1() expect_close(1,2,"2") end
-    local function f2() expect_close(1,"2",2) end
-    local function f3() expect_close("1",2,2) end
-    local function f4() expect_close(1,2,true) end
-    local function f5() expect_close(1,2,{}) end
-    local function f6() expect_close(1,2,f1) end
-
-    expect_failure(f1)
-    expect_failure(f2)
-    expect_failure(f3)
-    expect_failure(f4)
-    expect_failure(f5)
-    expect_failure(f6)
-
-    --basic
-    local function f1() expect_close(0.9, 1, 0.01) end
-    local function f2() expect_close(-5, -2, 1) end
-    local function f3() expect_close(0.01, 0, 0.001) end
-    expect_failure(f1)
-    expect_failure(f2)
-    expect_failure(f3)
-end
-
-tests.expect_not_close_passing = function ()
-    --basic
-    expect_not_close(0.5, 1, 0.2)
-    expect_not_close(0.1, 1, 0.8)
-    expect_not_close(-0.5, -2, 0.5)
-    expect_not_close(-0.5, -2, -0.5)
-    expect_not_close(0.1, 1, -0.8)
-    expect_not_close(20, 1, -0.2)
-    expect_not_close(1080, 1000, 0.06)
-    expect_not_close(15, 9, 0.15)
-    expect_not_close(12, 10, 0.1)
-end
-
-tests.expect_not_close_failing = function ()
-    --basic
-    local function f() expect_not_close(0.9, 1, 0.2) end
-    local function f1() expect_not_close(0.2, 1, 0.8) end
-    local function f2() expect_not_close(-1, -2, 0.5) end
-    local function f3() expect_not_close(-1, -2, -0.5) end
-    local function f4() expect_not_close(0.2, 1, -0.8) end
-    local function f5() expect_not_close(0.9, 1, -0.2) end
-    local function f6() expect_not_close(1050, 1000, 0.06) end
-    local function f7() expect_not_close(10, 9, 0.15) end
-    local function f8() expect_not_close(11, 10, 0.1) end
-
-    expect_failure(f)
-    expect_failure(f1)
-    expect_failure(f2)
-    expect_failure(f3)
-    expect_failure(f4)
-    expect_failure(f5)
-    expect_failure(f6)
-    expect_failure(f7)
-    expect_failure(f8)
-end
---]]
-
---
 --inrange
 tests["expect_inrange_passing"] = function ()
     --basic
@@ -656,6 +458,9 @@ tests["expect_inrange_passing"] = function ()
     expect_inrange(0, -1,1)
     expect_inrange(0, 0,0)
     expect_inrange(-2, -3,-2)
+
+    --strict
+    expect_inrange(1, 0,1.1, true)
 end
 
 tests["expect_inrange_failing"] = function ()
@@ -663,12 +468,16 @@ tests["expect_inrange_failing"] = function ()
     local function f() expect_inrange(2, 0,1) end
     expect_failure(f, _failure_conditions.inrange)
 
-    local function f() expect_inrange(-1, -4, -3) end
+    local function f() expect_inrange(-1, -4,-3) end
+    expect_failure(f, _failure_conditions.inrange)
+
+    --strict
+    local function f() expect_inrange(1, 1,2, true) end
     expect_failure(f, _failure_conditions.inrange)
 
     --bad range
-    local function f() expect_inrange(1, 4, 3) end
-    expect_failure(f, _failure_conditions.inrange)
+    local function f() expect_inrange(1, 4,3) end
+    expect_failure(f, _failure_conditions.badrange)
 
     --bad type
     local function f() expect_inrange(1, 0, true) end
@@ -678,6 +487,50 @@ tests["expect_inrange_failing"] = function ()
     expect_failure(f, _failure_conditions.badtype)
 
     local function f() expect_inrange(1, "str", 0) end
+    expect_failure(f, _failure_conditions.badtype)
+end
+--]]
+
+--
+--not_inrange
+tests["expect_not_inrange_passing"] = function ()
+    expect_not_inrange(2, 0,1)
+    expect_not_inrange(-1, -4,-3)
+    expect_not_inrange(1, 0,0)
+
+    --strict
+    expect_not_inrange(1, 0,1, true)
+end
+
+tests["expect_not_inrange_passing"] = function ()
+    local function f() expect_not_inrange(5, 4,6) end
+    expect_failure(f, _failure_conditions.not_inrange)
+
+    local function f() expect_not_inrange(0, -1,1) end
+    expect_failure(f, _failure_conditions.not_inrange)
+
+    local function f() expect_not_inrange(0, 0,0) end
+    expect_failure(f, _failure_conditions.not_inrange)
+
+    local function f() expect_not_inrange(-2, -3,-2) end
+    expect_failure(f, _failure_conditions.not_inrange)
+
+    --strict
+    local function f() expect_not_inrange(1, 1,2) end
+    expect_failure(f, _failure_conditions.not_inrange)
+
+    --bad range
+    local function f() expect_not_inrange(1, 4, 3) end
+    expect_failure(f, _failure_conditions.badrange)
+
+    --bad type
+    local function f() expect_not_inrange(1, 0, true) end
+    expect_failure(f, _failure_conditions.badtype)
+
+    local function f() expect_not_inrange("str", 0,1) end
+    expect_failure(f, _failure_conditions.badtype)
+
+    local function f() expect_not_inrange(1, "str", 0) end
     expect_failure(f, _failure_conditions.badtype)
 end
 --]]
@@ -713,7 +566,7 @@ tests["expect_contains_failing"] = function ()
     expect_failure(f, _failure_conditions.contains)
 
     local function f() expect_contains({nil}, nil) end
-    expect_failure(f, _failure_conditions.contains)
+    expect_failure(f, _failure_conditions.badtype)
 
     local function f() expect_contains({true}, false) end
     expect_failure(f, _failure_conditions.contains)
@@ -764,7 +617,10 @@ tests["expect_contains_table_failing"] = function ()
     local function f1() expect_contains(t3, t4) end
     expect_failure(f1, _failure_conditions.contains)
 end
+--]]
 
+--
+--doesnt_contain
 tests.expect_doesnt_contain_passing = function ()
     --basic
     expect_doesnt_contain({1,2, {1,2,3}}, 4)
@@ -791,14 +647,14 @@ tests.expect_doesnt_contain_failing = function ()
     local function f6() expect_doesnt_contain(t1, "string") end
 
     t2 = {'a', 'b', 'c', {true, false, {3, 2, 1}}}
-    local function f7() expect_doesnt_contain('a') end
-    local function f8() expect_doesnt_contain('b') end
-    local function f9() expect_doesnt_contain('c') end
-    local function f10() expect_doesnt_contain(true) end
-    local function f11() expect_doesnt_contain(false) end
-    local function f12() expect_doesnt_contain(3) end
-    local function f13() expect_doesnt_contain(2) end
-    local function f14() expect_doesnt_contain(1) end
+    local function f7() expect_doesnt_contain(t2, 'a') end
+    local function f8() expect_doesnt_contain(t2, 'b') end
+    local function f9() expect_doesnt_contain(t2, 'c') end
+    local function f10() expect_doesnt_contain(t2, true) end
+    local function f11() expect_doesnt_contain(t2, false) end
+    local function f12() expect_doesnt_contain(t2, 3) end
+    local function f13() expect_doesnt_contain(t2, 2) end
+    local function f14() expect_doesnt_contain(t2, 1) end
 
     expect_failure(f, _failure_conditions.doesnt_contain)
     expect_failure(f1, _failure_conditions.doesnt_contain)
@@ -886,7 +742,10 @@ tests.expect_type_failing = function ()
     expect_failure(f6)
     expect_failure(f7)
 end
+--]]
 
+--
+--not_type
 tests.expect_not_type_passing = function ()
     --basic
     expect_not_type("string", "number")
@@ -919,5 +778,204 @@ tests.expect_not_type_failing = function ()
     expect_failure(f6)
     expect_failure(f7)
 end
+--]]
+
+--
+--expect_error
+function err_func()
+    a.b.c = 10
+end
+
+function err_func2()
+    local c = "a" * "b"
+end
+
+function err_func3()
+    local a = {1} .. {2}
+end
+
+function noerr_func()
+    local c =  "a" .. "b"
+    local d = 9 * 8
+    local e = type(d)
+end
+
+tests["expect_error_passing"] = function ()
+    --basic
+    expect_error(err_func)
+    expect_error(err_func2)
+
+    --multiple args
+    local function f(a,b,c) local d = a*b*c; return d end
+    expect_error(f, "ha!", "lol", "no")
+end
+
+tests["expect_error_failing"] = function ()
+    --multiple args
+    local function f(a,b,c) local d = a*b*c; return d end
+    local function f1() expect_error(f, 5, 6, 7) end
+    expect_failure(f1, _failure_conditions.error)
+
+    --basic
+    local function f() expect_error(noerr_func) end
+    expect_failure(f, _failure_conditions.error) 
+
+    local function f() expect_error(true) end
+    expect_failure(f, _failure_conditions.badtype)
+
+    local function f() expect_error(10) end
+    expect_failure(f, _failure_conditions.badtype) 
+
+    local function f() expect_error("string") end
+    expect_failure(f, _failure_conditions.badtype)
+end
+--]]
+
+--
+--noerror
+tests["expect_noerror_passing"] = function ()
+    expect_noerror(noerr_func)
+end
+
+tests["expect_noerror_failing"] = function ()
+    --basic
+    local function f() expect_noerror(err_func) end
+    expect_failure(f, _failure_conditions.noerror)
+
+    local function f() expect_noerror(err_func2) end
+    expect_failure(f, _failure_conditions.noerror)
+
+    local function f() expect_noerror(4) end
+    expect_failure(f, _failure_conditions.badtype)
+
+    local function f() expect_noerror(true) end
+    expect_failure(f, _failure_conditions.badtype)
+
+    local function f() expect_noerror("string") end
+    expect_failure(f, _failure_conditions.badtype)
+end
+--]]
+
+--
+--close
+tests["close_passing"] = function ()
+    --basic
+    expect_close(0.9, 1, 0.2)
+    expect_close(0.2, 1, 0.8)
+    expect_close(-1, -2, 0.5)
+    expect_close(-1, -2, -0.5)
+    expect_close(0.2, 1, -0.8)
+    expect_close(0.9, 1, -0.2)
+    expect_close(1050, 1000, 0.06)
+    expect_close(10, 9, 0.15)
+    expect_close(11, 10, 0.1)
+end
+
+tests["close_failing_badtype"] = function ()
+    --basic
+    local function f1() expect_close(1,2,"2") end
+    local function f2() expect_close(1,"2",2) end
+    local function f3() expect_close("1",2,2) end
+    local function f4() expect_close(1,2,true) end
+    local function f5() expect_close(1,2,{}) end
+    local function f6() expect_close(1,2,f1) end
+
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+    expect_failure(f4)
+    expect_failure(f5)
+    expect_failure(f6)
+
+    --basic
+    local function f1() expect_close(0.9, 1, 0.01) end
+    local function f2() expect_close(-5, -2, 1) end
+    local function f3() expect_close(0.01, 0, 0.001) end
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+end
+
+tests.expect_not_close_passing = function ()
+    --basic
+    expect_not_close(0.5, 1, 0.2)
+    expect_not_close(0.1, 1, 0.8)
+    expect_not_close(-0.5, -2, 0.5)
+    expect_not_close(-0.5, -2, -0.5)
+    expect_not_close(0.1, 1, -0.8)
+    expect_not_close(20, 1, -0.2)
+    expect_not_close(1080, 1000, 0.06)
+    expect_not_close(15, 9, 0.15)
+    expect_not_close(12, 10, 0.1)
+end
+
+tests.expect_not_close_failing = function ()
+    --basic
+    local function f() expect_not_close(0.9, 1, 0.2) end
+    local function f1() expect_not_close(0.2, 1, 0.8) end
+    local function f2() expect_not_close(-1, -2, 0.5) end
+    local function f3() expect_not_close(-1, -2, -0.5) end
+    local function f4() expect_not_close(0.2, 1, -0.8) end
+    local function f5() expect_not_close(0.9, 1, -0.2) end
+    local function f6() expect_not_close(1050, 1000, 0.06) end
+    local function f7() expect_not_close(10, 9, 0.15) end
+    local function f8() expect_not_close(11, 10, 0.1) end
+
+    expect_failure(f)
+    expect_failure(f1)
+    expect_failure(f2)
+    expect_failure(f3)
+    expect_failure(f4)
+    expect_failure(f5)
+    expect_failure(f6)
+    expect_failure(f7)
+    expect_failure(f8)
+end
+--]]
+
+--
+--expect_true/false
+tests["expect_true_passing"] = function ()
+    expect_true(5 == 5)
+    expect_true(true)
+    expect_true(type("s") == "string")
+end
+
+tests["expect_failing"] = function ()
+    --basic
+    local function f() expect_true(false) end
+    expect_failure(f, _failure_conditions.istrue)
+
+    local function f() expect_true(5 == 6) end
+    expect_failure(f, _failure_conditions.istrue)
+
+    local function f() expect_true(type(5) == "string") end
+    expect_failure(f, _failure_conditions.istrue)
+
+    --bad type
+    local function f() expect_true({1,2,3}) end
+    expect_failure(f, _failure_conditions.badtype)
+
+    local function f() expect_true("string") end
+    expect_failure(f, _failure_conditions.badtype)
+
+    local function f() expect_true(a.b.c.d) end
+    expect_failure(f)
+end
+
+tests.expect_false_passing = function ()
+    expect_false(5 > 6)
+    expect_false(5 == 6)
+    expect_false(false)
+end
+
+tests.expect_false_failing = function ()
+    local function f() expect_false(true) end
+    local function f1() expect_false(5 < 6) end
+
+    expect_failure(f)
+    expect_failure(f1)
+end
+--]]
 
 start()

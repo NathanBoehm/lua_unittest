@@ -123,7 +123,8 @@ _failure_conditions = {
 
     --arg_errors
     badtype   = "argument was of incorrect type -",
-    difftypes = "arguments of different types -"
+    difftypes = "arguments of different types -",
+    badrange  = "invalid range, lower > upper"
 }
 
 
@@ -174,48 +175,58 @@ local function get_failure_msg(prefix)
             msg = msg .. ((i > 1) and ", " or "") .. type(failure.arguments[i])
         end
         msg = msg .. ". "
-    end
-
-    normalize_failure_args()
     
-    if failure.operation == _failure_conditions.eq then
-        msg = msg .. _failure_conditions.eq .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " == " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.ne then
-        msg = msg .. _failure_conditions.ne .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " != " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.lt then
-        msg = msg .. _failure_conditions.lt .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " < " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.lte then
-        msg = msg .. _failure_conditions.lte .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " <= " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.gt then
-        msg = msg .. _failure_conditions.gt .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " > " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.gte then
-        msg = msg .. _failure_conditions.gte .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " >= " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.inrange then
-        msg = msg .. _failure_conditions.inrange .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " in range " .. "{" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
-    elseif failure.operation == _failure_conditions.not_inrange then
-        msg = msg .. _failure_conditions.not_inrange .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. "in range " .. "{" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
-    elseif failure.operation == _failure_conditions.contains then
-        msg = msg .. _failure_conditions.contains .. failure.additional_msg .. ", expected: table to contain " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.doesnt_contain then
-        msg = msg .. _failure_conditions.doesnt_contain .. failure.additional_msg .. ", expected: table to contain " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.type then
-        msg = msg .. _failure_conditions.type .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be of type " .. string.sub(failure.arguments[2], 1, -1)
-    elseif failure.operation == _failure_conditions.not_type then
-        msg = msg .. _failure_conditions.not_type .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to not be of type " .. string.sub(failure.arguments[2], 1, -1)
-    elseif failure.operation == _failure_conditions.error then
-        msg = msg .. _failure_conditions.error .. failure.additional_msg .. ", expected: function to produce error"
-    elseif failure.operation == _failure_conditions.noerror then
-        msg = msg .. _failure_conditions.noerror .. failure.additional_msg .. ", expected: function to not produce error"
-    elseif failure.operation == _failure_conditions.close then
-        msg = msg .. _failure_conditions.close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be within ±" .. failure.arguments[3] .. " of " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.not_close then
-        msg = msg .. _failure_conditions.not_close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be at least ±" .. failure.arguments[3] .. " away from " .. failure.arguments[2]
-    elseif failure.operation == _failure_conditions.istrue then
-        msg = msg .. _failure_conditions.istrue .. failure.additional_msg .. ", expected: expression to be true"
-    elseif failure.operation == _failure_conditions.isfalse then
-        msg = msg .. _failure_conditions.isfalse .. failure.additional_msg .. ", expected: expression to be false"
-    elseif failure.operation == _failure_conditions.failure then
-        msg = msg .. _failure_conditions.failure .. failure.additional_msg
+    else
+
+        normalize_failure_args()
+    
+        if failure.operation == _failure_conditions.eq then
+            msg = msg .. _failure_conditions.eq .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " == " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.ne then
+            msg = msg .. _failure_conditions.ne .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " != " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.lt then
+            msg = msg .. _failure_conditions.lt .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " < " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.lte then
+            msg = msg .. _failure_conditions.lte .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " <= " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.gt then
+            msg = msg .. _failure_conditions.gt .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " > " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.gte then
+            msg = msg .. _failure_conditions.gte .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " >= " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.inrange then
+            if (failure.additional_msg ~= "") then
+                msg = msg .. failure.additional_msg .. " - {" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
+            else
+                msg = msg .. _failure_conditions.inrange .. ", expected: " .. failure.arguments[1] .. " in range " .. "{" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
+            end
+        elseif failure.operation == _failure_conditions.not_inrange then
+            if (failure.additional_msg ~= "") then
+                msg = msg .. failure.additional_msg .. " - {" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
+            else
+                msg = msg .. _failure_conditions.not_inrange .. ", expected: " .. failure.arguments[1] .. " in range " .. "{" .. failure.arguments[2] .. "," .. failure.arguments[3] .. "}"
+            end
+        elseif failure.operation == _failure_conditions.contains then
+            msg = msg .. _failure_conditions.contains .. failure.additional_msg .. ", expected: table to contain " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.doesnt_contain then
+            msg = msg .. _failure_conditions.doesnt_contain .. failure.additional_msg .. ", expected: table to not contain " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.type then
+            msg = msg .. _failure_conditions.type .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be of type " .. string.sub(failure.arguments[2], 1, -1)
+        elseif failure.operation == _failure_conditions.not_type then
+            msg = msg .. _failure_conditions.not_type .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to not be of type " .. string.sub(failure.arguments[2], 1, -1)
+        elseif failure.operation == _failure_conditions.error then
+            msg = msg .. _failure_conditions.error .. failure.additional_msg .. ", expected: function to produce error"
+        elseif failure.operation == _failure_conditions.noerror then
+            msg = msg .. _failure_conditions.noerror .. failure.additional_msg .. ", expected: function to not produce error"
+        elseif failure.operation == _failure_conditions.close then
+            msg = msg .. _failure_conditions.close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be within ±" .. failure.arguments[3] .. " of " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.not_close then
+            msg = msg .. _failure_conditions.not_close .. failure.additional_msg .. ", expected: " .. failure.arguments[1] .. " to be at least ±" .. failure.arguments[3] .. " away from " .. failure.arguments[2]
+        elseif failure.operation == _failure_conditions.istrue then
+            msg = msg .. _failure_conditions.istrue .. failure.additional_msg .. ", expected: expression to be true"
+        elseif failure.operation == _failure_conditions.isfalse then
+            msg = msg .. _failure_conditions.isfalse .. failure.additional_msg .. ", expected: expression to be false"
+        elseif failure.operation == _failure_conditions.failure then
+            msg = msg .. _failure_conditions.failure .. failure.additional_msg
+        end
     end
 
     failure.reset()
@@ -519,7 +530,7 @@ local function _inrange(val, lower, upper)
 end
 
 local function _inrange_strict(val, lower, upper)
-    return (val > lower and val < uppper)
+    return (val > lower and val < upper)
 end
 
 local function test_inrange(is_assert, val, lower, upper, strict)
@@ -532,7 +543,7 @@ local function test_inrange(is_assert, val, lower, upper, strict)
 
     else
         if (lower > upper) then
-            failure.additional_msg = ". invalid range, lower > upper"
+            failure.additional_msg = _failure_conditions.badrange
             coroutine.yield(false, is_assert)
 
         elseif (strict == true) then
@@ -562,7 +573,7 @@ local function test_not_inrange(is_assert, val, lower, upper, strict) --ADD TEST
 
     else
         if (lower > upper) then
-            failure.additional_msg = ". invalid range, lower > upper"
+            failure.additional_msg = _failure_conditions.badrange
             coroutine.yield(false, is_assert)
 
         elseif (strict == true) then
@@ -768,7 +779,11 @@ end
 
 local function set_close_failure(value, target, magnitudeDif)
     failure.num_arguments = 3
-    failure.arguments = {value, target, target * magnitudeDif}
+    if (type(target) ~= "number" or type(magnitudeDif) ~= "number") then
+        failure.arguments = {value, target, "bad argument"}
+    else
+        failure.arguments = {value, target, target * magnitudeDif}
+    end
     failure.expected_types = {"number", "number", "number"}
     failure.line_num = debug.getinfo(4).currentline
 end
@@ -882,7 +897,9 @@ function expect_false(expression)
     test_false(expect, expression)
 end
 
+
 --test funciton failure
+
 
 function expect_failure(test_func, expected_err, ...)
     failure.operation = _failure_conditions.failure
