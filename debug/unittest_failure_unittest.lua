@@ -24,4 +24,8 @@ local function f2()
     expect_eq(5, 6)
 end
 
+tests["fail"] = function ()
+    expect_eq(5,6)
+end
+
 start()

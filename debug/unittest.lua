@@ -47,6 +47,9 @@ local _tests_name = {}
 local _tests = tests
 tests = {}
 
+local assert = true
+local expect = false
+
 local tests_mt = {
     __newindex = function (table, name, test)
         _tests.size = _tests.size + 1
@@ -146,7 +149,7 @@ local function normalize_failure_args()
     end
 end
 
-local function get_failure_msg()
+local function get_failure_msg(prefix)
     local msg = ""
 
     if (failure.line_num == nil) then
@@ -159,7 +162,7 @@ local function get_failure_msg()
         return msg
     end
 
-    msg = "failure on line " .. failure.line_num .. ": "
+    msg = prefix .. "failure on line " .. failure.line_num .. ": "
 
     if (failure.arg_error) then
         msg = msg .. failure.arg_error .. " required arguments of type(s): " 
@@ -225,7 +228,7 @@ local function run_test(test, ...)
     local failure_log = {}
     local failure_count = 0
     while (true) do --continue running regardless of expect_<>() results until the end of the function is reached or an unexpected error occurs
-        op_status, yield_val = coroutine.resume(test_routine, ...) --FLAG: consider an assert return that immeadiately ends the operation, for assert functions
+        op_status, yield_val, is_assert = coroutine.resume(test_routine, ...) --FLAG: consider an assert return that immeadiately ends the operation, for assert functions
 
         if (op_status == false) then 
             failure.unexpected_error = yield_val
@@ -238,7 +241,12 @@ local function run_test(test, ...)
         if (yield_val == false) then
             test_passed = false
             failure_count = failure_count + 1
-            failure_log[failure_count] = get_failure_msg()
+            if (is_assert) then
+                failure_log[failure_count] = get_failure_msg("assert ")
+                break
+            else
+                failure_log[failure_count] = get_failure_msg("expect ")
+            end
         end
 
         if (coroutine.status(test_routine) == "dead") then --end of function reached
@@ -352,15 +360,15 @@ local function search_tablet(table, tval)
     return found
 end
 
---expect definitions
+--expect/assert definitions
 
---expect equal/not-equal
+--equal/not-equal
 
 local function _eq(lhs, rhs) --not set_eq_failure() needed because there is no yeild prior to the calls to _eq
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"any", "any"}
-    failure.line_num = debug.getinfo(3).currentline
+    failure.line_num = debug.getinfo(4).currentline
 
     if (type(lhs) ~= type(rhs)) then
         failure.arg_error = _failure_conditions.difftypes
@@ -375,83 +383,135 @@ local function _eq(lhs, rhs) --not set_eq_failure() needed because there is no y
     end
 end
 
-function expect_eq(lhs, rhs)
+local function test_eq(is_assert, lhs, rhs)
     failure.operation = _failure_conditions.eq
-    coroutine.yield( _eq(lhs, rhs) )
+    coroutine.yield( _eq(lhs, rhs), is_assert )
 end
 
-function expect_ne(lhs, rhs)
+function assert_eq(lhs, rhs)
+    test_eq(assert, lhs, rhs)
+end
+function expect_eq(lhs, rhs)
+    test_eq(expect, lhs, rhs)
+end
+
+
+local function test_ne(is_assert, lhs, rhs)
     failure.operation = _failure_conditions.ne
-    coroutine.yield( not _eq(lhs, rhs) )
+    coroutine.yield( not _eq(lhs, rhs), is_assert )
 end
 
---expect less-than/greater-than
+function assert_ne(lhs, rhs)
+    test_ne(assert, lhs, rhs)
+end
+function expect_ne(lhs, rhs)
+    test_ne(expect, lhs, rhs)
+end
+
+
+--less-than/greater-than
+
 
 local function set_ltgt_failure(lhs, rhs)
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"number", "number"} 
-    failure.line_num = debug.getinfo(3).currentline
+    failure.line_num = debug.getinfo(4).currentline
 end
 
-function expect_lt(lhs, rhs)
+local function test_lt(is_assert, lhs, rhs)
     set_ltgt_failure(lhs, rhs)
     failure.operation = _failure_conditions.lt
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
-        coroutine.yield( (lhs < rhs) )
+        coroutine.yield( (lhs < rhs), is_assert )
     end
 end
 
-function expect_gt(lhs, rhs)
+function assert_lt(lhs, rhs)
+    test_lt(assert, lhs, rhs)
+end
+function expect_lt(lhs, rhs)
+    test_lt(expect, lhs, rhs)
+end
+
+
+local function test_gt(is_assert, lhs, rhs)
     set_ltgt_failure(lhs, rhs)
     failure.operation = _failure_conditions.gt
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
-        coroutine.yield( (lhs > rhs) )
+        coroutine.yield( (lhs > rhs), is_assert )
     end
 end
 
-function expect_lte(lhs, rhs)
+function assert_gt(lhs, rhs)
+    test_gt(assert, lhs, rhs)
+end
+function expect_gt(lhs, rhs)
+    test_gt(expect, lhs, rhs)
+end
+
+
+local function test_lte(is_assert, lhs, rhs)
     set_ltgt_failure(lhs, rhs)
     failure.operation = _failure_conditions.lte
     
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
-        coroutine.yield( (lhs <= rhs) )
+        coroutine.yield( (lhs <= rhs), is_assert )
     end
 end
 
-function expect_gte(lhs, rhs)
+function assert_lte(lhs, rhs)
+    test_lte(assert, lhs, rhs)
+end
+function expect_lte(lhs, rhs)
+    test_lte(expect, lhs, rhs)
+end
+
+
+local function test_gte(is_assert, lhs, rhs)
     set_ltgt_failure(lhs, rhs)
     failure.operation = _failure_conditions.gte
-    failure.line_num = debug.getinfo(2).currentline
+    failure.line_num = debug.getinfo(3).currentline
 
     if (type(lhs) ~= "number" or type(rhs) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
-        coroutine.yield( (lhs >= rhs) )
+        coroutine.yield( (lhs >= rhs), is_assert )
     end
-end 
+end
+
+function assert_gte(lhs, rhs)
+    test_gte(assert, lhs, rhs)
+end
+function expect_gte(lhs, rhs)
+    test_gte(expect, lhs, rhs)
+end
+
+
+--inrange
+
 
 local function set_inrange_failure(val, lower, upper)
     failure.num_arguments = 3
     failure.arguments = {val, lower, upper}
     failure.expected_types = {"number", "number", "number"}
-    failure.line_num = debug.getinfo(3).currentline
+    failure.line_num = debug.getinfo(4).currentline
 end
 
 local function _inrange(val, lower, upper)
@@ -462,57 +522,74 @@ local function _inrange_strict(val, lower, upper)
     return (val > lower and val < uppper)
 end
 
-function expect_inrange(val, lower, upper, strict)
+local function test_inrange(is_assert, val, lower, upper, strict)
     set_inrange_failure(val, lower, upper)
     failure.operation = _failure_conditions.inrange
 
     if (type(val) ~= "number" or type(lower) ~= "number" or type(upper) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
         if (lower > upper) then
             failure.additional_msg = ". invalid range, lower > upper"
-            coroutine.yield(false)
+            coroutine.yield(false, is_assert)
 
         elseif (strict == true) then
-            coroutine.yield( _inrange_strict(val, lower, upper) )
+            coroutine.yield( _inrange_strict(val, lower, upper), is_assert )
 
         else --anything other than true (and crucially nil) is considered to be not strict
-            coroutine.yield( _inrange(val, lower, upper) )
+            coroutine.yield( _inrange(val, lower, upper), is_assert )
         end
     end
 end
 
-function expect_not_inrange(val, lower, upper, strict) --ADD TESTS
+function assert_inrange(val, lower, upper, strict)
+    test_inrange(assert, val, lower, upper, strict)
+end
+function expect_inrange(val, lower, upper,  strict)
+    test_inrange(expect, val, lower, upper, strict)
+end
+
+
+local function test_not_inrange(is_assert, val, lower, upper, strict) --ADD TESTS
     set_inrange_failure(val, lower, upper)
     failure.operation = _failure_conditions.not_inrange
 
     if (type(val) ~= "number" or type(lower) ~= "number" or type(upper) ~= "number") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
         if (lower > upper) then
             failure.additional_msg = ". invalid range, lower > upper"
-            coroutine.yield(false)
+            coroutine.yield(false, is_assert)
 
         elseif (strict == true) then
-            coroutine.yield( not _inrange_strict(val, lower, upper) )
+            coroutine.yield( not _inrange_strict(val, lower, upper), is_assert )
 
         else --anything other than true (and crucially nil) is considered to be not strict
-            coroutine.yield( not _inrange(val, lower, upper) )
+            coroutine.yield( not _inrange(val, lower, upper), is_assert )
         end
     end
 end
 
+function assert_not_inrange(val, lower, upper, strict)
+    test_not_inrange(assert, val, lower, upper, strict)
+end
+function expect_not_inrange(val, lower, upper, strict)
+    test_not_inrange(expect, val, lower, upper, strict)
+end
+
+
 --expect contains
+
 
 local function set_contains_failure(table, val)
     failure.num_arguments = 2
     failure.arguments = {table, val}
     failure.expected_types = {"table", "non-nil"}
-    failure.line_num = debug.getinfo(3).currentline
+    failure.line_num = debug.getinfo(4).currentline
 end
 
 local function _contains(table, val)
@@ -528,7 +605,7 @@ local function _contains(table, val)
     end
 end
 
-function expect_contains(table, val)
+local function test_contains(is_assert, table, val)
     set_contains_failure(table, val)
     failure.operation = _failure_conditions.contains
 
@@ -541,60 +618,92 @@ function expect_contains(table, val)
         coroutine.yield(false)
     
     else
-        coroutine.yield( _contains(table, val) )
+        coroutine.yield( _contains(table, val), is_assert )
     end
 end
 
-function expect_doesnt_contain(table, val)
+function assert_contains(table, val)
+    test_contains(assert, table, val)
+end
+function expect_contains(table, val)
+    test_contains(expect, table, val)
+end
+
+
+local function test_doesnt_contain(is_assert, table, val)
     set_contains_failure(table, val)
     failure.operation = _failure_conditions.doesnt_contain
 
     if type(table) ~= "table" then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     elseif type(val) == "nil" then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
-        coroutine.yield( not _contains(table, val) )
+        coroutine.yield( not _contains(table, val), is_assert )
     end
 end
 
+function assert_doesnt_contain(table, val)
+    test_doesnt_contain(assert, table, val)
+end
+function expect_doesnt_contain(table, val)
+    test_doesnt_contain(expect, table, val)
+end
+
+
 --expect_type
+
 
 local function set_type_failure(value, type)
     failure.num_arguments = 2
     failure.arguments = {value, type}
     failure.expected_types = {"any", "type-string"}
-    failure.line_num = debug.getinfo(3).currentline
+    failure.line_num = debug.getinfo(4).currentline
 end
 
-function expect_type(value, t)
+local function test_type(is_assert, value, t)
     set_type_failure(value, t)
     failure.operation = _failure_conditions.type
 
     if (type(t) ~= "string") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
     
     else
-        coroutine.yield( type(value) == t )
+        coroutine.yield( type(value) == t, is_assert )
     end
 end
 
-function expect_not_type(value, t)
+function assert_type(value, t)
+    test_type(assert, value, t)
+end
+function expect_type(value, t)
+    test_type(expect, value, t)
+end
+
+
+local function test_not_type(is_assert, value, t)
     set_type_failure(value, t)
     failure.operation = _failure_conditions.not_type
 
     if (type(t) ~= "string") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
     
     else
-        coroutine.yield( type(value) ~= t )
+        coroutine.yield( type(value) ~= t, is_assert )
     end
+end
+
+function assert_not_type(value, t)
+    test_not_type(assert, value, t)
+end
+function expect_not_type(value, t)
+    test_not_type(expect, value, t)
 end
 
 
@@ -605,7 +714,7 @@ local function set_error_failure(func)
     failure.num_arguments = 1
     failure.arguments = {func}
     failure.expected_types = {"function"}
-    failure.line_num = debug.getinfo(3).currentline
+    failure.line_num = debug.getinfo(4).currentline
 end
 
 local function _noerror(func, ...)
@@ -613,38 +722,55 @@ local function _noerror(func, ...)
     return success
 end
 
-function expect_error(func, ...)
+local function test_error(is_assert, func, ...)
     set_error_failure(func)
     failure.operation = _failure_conditions.error
 
     if (type(func) ~= "function") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
     else
-        coroutine.yield( not _noerror(func, ...) )
+        coroutine.yield( not _noerror(func, ...), is_assert )
     end
 end
 
-function expect_noerror(func, ...)
+function assert_error(func, ...)
+    test_error(assert, func, ...)
+end
+function expect_error(func, ...)
+    test_error(expect, func, ...)
+end
+
+
+local function test_noerror(is_assert, func, ...)
     set_error_failure(func)
     failure.operation = _failure_conditions.noerror
 
     if (type(func) ~= "function") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
     else
-        coroutine.yield( _noerror(func, ...) )
+        coroutine.yield( _noerror(func, ...), is_assert )
     end
 end
 
+function assert_noerror(func, ...)
+    test_noerror(assert, func, ...)
+end
+function expect_noerror(func, ...)
+    test_noerror(expect, func, ...)
+end
+
+
 --expect close
 --optional hardcore challenge: expect_close for strings allowing for a certain number of different characters
+
 
 local function set_close_failure(value, target, magnitudeDif)
     failure.num_arguments = 3
     failure.arguments = {value, target, target * magnitudeDif}
     failure.expected_types = {"number", "number", "number"}
-    failure.line_num = debug.getinfo(3).currentline
+    failure.line_num = debug.getinfo(4).currentline
 end
 
 local function _close(value, target, magnitudeDif)
@@ -665,66 +791,98 @@ local function _close(value, target, magnitudeDif)
     end
 end
 
-function expect_close(value, target, magnitudeDif)
+local function test_close(is_assert, value, target, magnitudeDif)
     set_close_failure(value, target, magnitudeDif)
     failure.operation = _failure_conditions.close
 
     if type(value) ~= "number" or type(target) ~= "number" or type(magnitudeDif) ~= "number" then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
     
     else
-        coroutine.yield( _close(value, target, magnitudeDif) )
+        coroutine.yield( _close(value, target, magnitudeDif), is_assert )
     end
 end
 
-function expect_not_close(value, target, magnitudeDif)
+function assert_close(value, target, magnitudeDif)
+    test_close(assert, value, target, magnitudeDif)
+end
+function expect_close(value, target, magnitudeDif)
+    test_close(expect, value, target, magnitudeDif)
+end
+
+
+local function test_not_close(is_assert, value, target, magnitudeDif)
     set_close_failure(value, target, magnitudeDif)
     failure.operation = _failure_conditions.not_close
 
     if type(value) ~= "number" or type(target) ~= "number" or type(magnitudeDif) ~= "number" then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
     
     else
-        coroutine.yield( not _close(value, target, magnitudeDif) )
+        coroutine.yield( not _close(value, target, magnitudeDif), is_assert )
     end
 end
 
---expect
+function assert_not_close(value, target, magnitudeDif)
+    test_not_close(assert, value, target, magnitudeDif)
+end
+function expect_not_close(value, target, magnitudeDif)
+    test_not_close(expect, value, target, magnitudeDif)
+end
+
+--expect/assert
 
 local function set_tf_failure(expression)
     failure.num_arguments = 1
     failure.arguments = {expression}
     failure.expected_types = {"bool"}
-    failure.line_num = debug.getinfo(3).currentline
+    failure.line_num = debug.getinfo(4).currentline
 end
 
-function expect_true(expression)
+local function test_true(is_assert, expression)
     set_tf_failure(expression)
     failure.operation = _failure_conditions.istrue
 
     if (type(expression) ~= "boolean") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
-        coroutine.yield( expression )
+        coroutine.yield( expression, is_assert )
     end
 end
 
-function expect_false(expression)
+function assert_true(expression)
+    test_true(assert, expression)
+end
+function expect_true(expression)
+    test_true(expect, expression)
+end
+
+
+local function test_false(is_assert, expression)
     set_tf_failure(expression)
     failure.operation = _failure_conditions.isfalse
 
     if (type(expression) ~= "boolean") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, is_assert)
 
     else
-        coroutine.yield( not expression )
+        coroutine.yield( not expression, is_assert )
     end
 end
+
+function assert_false(expression)
+    test_false(assert, expression)
+end
+function expect_false(expression)
+    test_false(expect, expression)
+end
+
+--test funciton failure
 
 function expect_failure(test_func, expected_err, ...)
     failure.operation = _failure_conditions.failure
@@ -735,11 +893,11 @@ function expect_failure(test_func, expected_err, ...)
 
     if (type(test_func) ~= "function") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, expect)
 
     elseif (type(expected_err) ~= "string" and type(expected_err) ~= "nil") then
         failure.arg_error = _failure_conditions.badtype
-        coroutine.yield(false)
+        coroutine.yield(false, expect)
 
     else
         failure.reset()
