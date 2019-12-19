@@ -1,17 +1,17 @@
-#lua_unittest
+# lua_unittest
 A simple, googletest inspired unit-testing framework for lua modules, designed to be run from a terminal.
 
-#Usage
+# Usage
 To begin using, put 
 `require 'unittest'`
 followed by
 `load_modules('<name of module to test here>', ...)`
 
 in your unittesting file. Unit tests are created by adding functions to the 'tests' table in the unittest.lua module. Inside each of these functions you can make use of the various expect/assert functions provided.
-###note 
+### note 
 see 'unittest_unittest.lua' under debug for a more extensive example.
 
-##Example
+## Example
 ```lua
 require 'unittest'
 load_modules('my_module.lua')
@@ -26,7 +26,7 @@ end
 add_test("second test", my_test_two())
 ```
 
-#Testing Functions
+# Testing Functions
 There are two versions of every testing function and expect\_<> and an assert\_<>. An assert will immeadiately end the test and log the result on a failure, an expect will log the result but continue with the test.
 
 
@@ -51,8 +51,8 @@ There are two versions of every testing function and expect\_<> and an assert\_<
 | expect_true(expression) | expression: boolean | Tests that 'expression' evaluates to true. |
 | expect_false(expression) | expression: boolean | Tests that 'expression' evaluates to false. |
 
-###note
+### note
 in the case of tables, equality means both tables contain the same key-value pairs.
 
-##misc
+## misc
 `add_test(name, test)` where 'name' is a string and 'test' is a function is also provided as an optional way to add a test
