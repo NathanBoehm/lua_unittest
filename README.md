@@ -1,5 +1,5 @@
 # lua_unittest
-A simple, googletest inspired unit-testing framework for lua modules, designed to be run from a terminal.
+A simple, googletest inspired unit-testing framework for lua modules, designed to be run from a terminal and provide detailed feedback on test failures.
 
 # Usage
 To begin using, put 
