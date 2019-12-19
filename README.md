@@ -6,8 +6,8 @@ To begin using, put
 `require 'unittest'`
 followed by
 `load_modules('<name of module to test here>', ...)`
-after you have defined your test put
-`run_all_tests()` or `start` to run the tests
+after you have defined your tests put
+`run_all_tests()` or `start` at the bottom to run the tests
 
 in your unittesting file. Unit tests are created by adding functions to the 'tests' table in the unittest.lua module. Inside each of these functions you can make use of the various expect/assert functions provided. Run the file by calling dofile("path to your file") in the terminal.
 ### note 
