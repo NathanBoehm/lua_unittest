@@ -11,10 +11,13 @@ after you have defined your tests put
 
 in your unittesting file. Unit tests are created by adding functions to the 'tests' table in the unittest.lua module. Inside each of these functions you can make use of the various expect/assert functions provided. Run the file by calling dofile("path to your file") in the terminal.
 ### note 
-see 'unittest_unittest.lua' under debug for a more extensive example.
+1.see 'unittest_unittest.lua' under debug for a more extensive example.
+2.you may need to set your package.path to the location of the unittest.lua module
 
 ## Example
 ```lua
+package.path = "..."
+
 require 'unittest'
 load_modules('my_module.lua')
 
