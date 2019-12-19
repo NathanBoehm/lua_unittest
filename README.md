@@ -26,6 +26,8 @@ function my_test_two()
 	assert_lt(return_one(), 2)
 end
 add_test("second test", my_test_two())
+
+start()
 ```
 
 # Testing Functions
