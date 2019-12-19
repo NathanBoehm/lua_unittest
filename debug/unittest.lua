@@ -11,33 +11,35 @@
 
 --[[        unit testing functions
 
-    expect_eq(lhs, rhs):                          verifies that 'lhs' is equal to 'rhs', 'lhs' and 'rhs' must be of the same type.
-    expect_ne(lhs, rhs):                          verifies that 'lhs' is not equal to 'rhs', succeeds if arguments are of different types.
-    expect_lt(lhs, rhs):                          verifies that 'lhs' is less than 'rhs', 'lhs' and 'rhs' must be of the same type. Fails if 'lhs' is equal to 'rhs'.
-    expect_lte(lhs, rhs):                         same as expect_lt, except 'lhs' and be equal to 'rhs'.
-    expect_gt(lhs, rhs):                          verifies that 'lhs' is greater than 'rhs', 'lhs' and 'rhs' must be of the same type. Fails if 'lhs' is equal to 'rhs'.
-    expect_gte(lhs, rhs):                         same as expect_gt, except 'lhs' can be equal to 'rhs'.
-    expect_inrange(val, lower, upper):            verifies that 'val' is >= 'lower' and <= 'upper'. Fails if any argument is not a number.
-    expect_not_inrange(val, lower, upper):        verifies that 'val' is > 'upper' or < 'lower'. Fails if anhy argument is not a number.
-    expect_contains(table, val):                  verifies that 'table' contains at least one instance of 'val', 'val' cannot be nil.
-    expect_doesnt_contain(table, val):            verifies that 'table' does not contain any instance of 'val', 'val' cannot be nil.
-    expect_type(value, type):                     verifies that 'value' is of type 'type', 'type' must be a string and represent a valid type.
-    expect_not_type(value, type):                 verifies that 'value' is not of type 'type', 'type' must be a stirng and represent a valid type.
-    expect_error(function, ...):                  verifies that 'function' produces an error when run, 'function' must be a funciton. 
-                                                    '...' is an optional, variable number of arguments that the function will be called with.
-                                                        NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
-    expect_noerror(function, ...):                verifies that 'function' produces an error when run, 'function' must be a function.
-                                                    '...' is an optional, variable number of arguments that the function will be called with.
-                                                        NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
-    expect_close(value, target, magnitudeDif):    verifies that the difference between 'target' and 'value' is less than or equal to abs('magnitudeDif' * 'target'). Fails 
-                                                        any argument is not a number. A negative magnitude is treated as a positive.
-    expect_true(expression):                      verifies that 'expression' evaluates to true, 'expression' must evaluate to a boolean.
-    expect_false(expression):                     verifies that 'expression' evaluates to false, 'expression' must evaluate to a boolean.
-    expect_failure(test_func, expected_err, ...): verifies that the given function would fail if run as a test. (Probably not useful unless testing the unittest module itself - will be removed form 'release' version)
-                                                    Optional string 'expected_err', if set, searches the function failure msg for 'expected_err', fails if it is not found. 
-                                                        If there are multiple failure messages within an expect_failure call, then each failure message will be check for 'expect_err'
-                                                    '...' is an optional, variable number of arguments that the function will be called with
-                                                        NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
+    expect_eq(lhs, rhs):                           verifies that 'lhs' is equal to 'rhs', 'lhs' and 'rhs' must be of the same type.
+    expect_ne(lhs, rhs):                           verifies that 'lhs' is not equal to 'rhs', succeeds if arguments are of different types.
+    expect_lt(lhs, rhs):                           verifies that 'lhs' is less than 'rhs', 'lhs' and 'rhs' must be of the same type. Fails if 'lhs' is equal to 'rhs'.
+    expect_lte(lhs, rhs):                          same as expect_lt, except 'lhs' and be equal to 'rhs'.
+    expect_gt(lhs, rhs):                           verifies that 'lhs' is greater than 'rhs', 'lhs' and 'rhs' must be of the same type. Fails if 'lhs' is equal to 'rhs'.
+    expect_gte(lhs, rhs):                          same as expect_gt, except 'lhs' can be equal to 'rhs'.
+    expect_inrange(val, lower, upper):             verifies that 'val' is >= 'lower' and <= 'upper'. Fails if any argument is not a number.
+    expect_not_inrange(val, lower, upper):         verifies that 'val' is > 'upper' or < 'lower'. Fails if anhy argument is not a number.
+    expect_contains(table, val):                   verifies that 'table' contains at least one instance of 'val', 'val' cannot be nil.
+    expect_doesnt_contain(table, val):             verifies that 'table' does not contain any instance of 'val', 'val' cannot be nil.
+    expect_type(value, type):                      verifies that 'value' is of type 'type', 'type' must be a string and represent a valid type.
+    expect_not_type(value, type):                  verifies that 'value' is not of type 'type', 'type' must be a stirng and represent a valid type.
+    expect_error(function, ...):                   verifies that 'function' produces an error when run, 'function' must be a funciton. 
+                                                     '...' is an optional, variable number of arguments that the function will be called with.
+                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
+    expect_noerror(function, ...):                 verifies that 'function' produces an error when run, 'function' must be a function.
+                                                     '...' is an optional, variable number of arguments that the function will be called with.
+                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
+    expect_close(value, target, magnitudeDif):     verifies that the difference between 'target' and 'value' is less than or equal to abs('magnitudeDif' * 'target'). Fails 
+                                                         any argument is not a number. A negative magnitude is treated as a positive.
+    expect_not_close(value, target, magnitudeDif): verifies that the difference between 'target' and 'value' is greater than or equal to abs('magnitudeDif' * 'target'). Fails 
+                                                         any argument is not a number. A negative magnitude is treated as a positive.
+    expect_true(expression):                       verifies that 'expression' evaluates to true, 'expression' must evaluate to a boolean.
+    expect_false(expression):                      verifies that 'expression' evaluates to false, 'expression' must evaluate to a boolean.
+    expect_failure(test_func, expected_err, ...):  verifies that the given function would fail if run as a test. (Probably not useful unless testing the unittest module itself - will be removed form 'release' version)
+                                                     Optional string 'expected_err', if set, searches the function failure msg for 'expected_err', fails if it is not found. 
+                                                         If there are multiple failure messages within an expect_failure call, then each failure message will be check for 'expect_err'
+                                                     '...' is an optional, variable number of arguments that the function will be called with
+                                                         NOTE: '...' args are not validated and bad arguments can crash the unittesting framework
 ]]
 
 
@@ -83,7 +85,7 @@ local failure = {
     line_num         = nil,
     additional_msg   = "",
     operation        = nil,
-    num_arguments    = nil, --must be set instead of using #arguments, in case of nil args
+    num_arguments    = nil,
     arguments        = {},
     expected_types   = {},
     arg_error        = nil,
@@ -238,15 +240,15 @@ local function run_test(test, ...)
     local test_passed = true
     local failure_log = {}
     local failure_count = 0
-    while (true) do --continue running regardless of expect_<>() results until the end of the function is reached or an unexpected error occurs
-        op_status, yield_val, is_assert = coroutine.resume(test_routine, ...) --FLAG: consider an assert return that immeadiately ends the operation, for assert functions
+    while (true) do
+        op_status, yield_val, is_assert = coroutine.resume(test_routine, ...)
 
         if (op_status == false) then 
             failure.unexpected_error = yield_val
             test_passed = false
             failure_count = failure_count + 1
             failure_log[failure_count] = get_failure_msg()
-            break --no reason to continue in this case
+            break
         end
 
         if (yield_val == false) then
@@ -306,8 +308,8 @@ function run_all_tests()
 end
 
 function add_test(name, test)
-    if (type(name) ~= "string") then io.write("test name was not a valid string\n") return end --FLAG: why is there a return here?
-    if (type(test) ~= "function") then io.write("test was not a valid function\n") return end
+    if (type(name) ~= "string") then io.write("test name was not a valid string\n") end
+    if (type(test) ~= "function") then io.write("test was not a valid function\n") end
 
     tests[name] = test
 end
@@ -330,7 +332,7 @@ local function check_tables(ltable, rtable)
             if type(v) == "table" then
                 if type(rtable[k]) == "table" then
                     are_equal = check_tables(v, rtable[k])
-                    if not are_equal then return are_equal end --must return false here or a subsequent pair of subtables that are the same will overwrite this.
+                    if not are_equal then return are_equal end
                 else
                     are_equal = false
                 end 
@@ -375,7 +377,7 @@ end
 
 --equal/not-equal
 
-local function _eq(lhs, rhs) --not set_eq_failure() needed because there is no yeild prior to the calls to _eq
+local function _eq(lhs, rhs)
     failure.num_arguments = 2
     failure.arguments = {lhs, rhs}
     failure.expected_types = {"any", "any"}
@@ -563,7 +565,7 @@ function expect_inrange(val, lower, upper,  strict)
 end
 
 
-local function test_not_inrange(is_assert, val, lower, upper, strict) --ADD TESTS
+local function test_not_inrange(is_assert, val, lower, upper, strict)
     set_inrange_failure(val, lower, upper)
     failure.operation = _failure_conditions.not_inrange
 
@@ -719,7 +721,7 @@ end
 
 
 --expect_error
---I really doubt whether there is a use case for expecdt_error/noerror, but I will leave them in for now
+
 
 local function set_error_failure(func)
     failure.num_arguments = 1
@@ -774,7 +776,6 @@ end
 
 
 --expect close
---optional hardcore challenge: expect_close for strings allowing for a certain number of different characters
 
 
 local function set_close_failure(value, target, magnitudeDif)
@@ -796,7 +797,7 @@ local function _close(value, target, magnitudeDif)
     --local realValDif = adjustedVal - target
 
     if (target == 0) then
-        allowedDif = target + magnitudeDif --FLAG: add a note about this and unit tests!
+        allowedDif = target + magnitudeDif
     end
 
     if (target >= 0) then
@@ -847,7 +848,9 @@ function expect_not_close(value, target, magnitudeDif)
     test_not_close(expect, value, target, magnitudeDif)
 end
 
+
 --expect/assert
+
 
 local function set_tf_failure(expression)
     failure.num_arguments = 1
@@ -934,8 +937,7 @@ function expect_failure(test_func, expected_err, ...)
             if expected_err ~= nil then
                 for _,msg in pairs(failure_log) do
                     if not string.find(msg, expected_err) then
-                        failure.additional_msg = "test function failure message \"" .. msg .. "\" did not contain the expected message: " .. expected_err --TODO: NEED TO TEST THAT MULTIPLE FAILURE MESSAGES SHOW UP IN OUTPUT
-                        coroutine.yield(false)
+                        failure.additional_msg = "test function failure message \"" .. msg .. "\" did not contain the expected message: " .. expected_err
                     end
                 end
                 coroutine.yield(true)
