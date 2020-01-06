@@ -120,13 +120,13 @@ end
 local function get_failure_msg(prefix)
     local msg = ""
 
-    if (failure.line_num == nil) then
-        msg = "unexpected failure: bad argument passed to expect-function"
+    if (failure.unexpected_error ~= nil) then
+        msg = "unexpected failure: ".. failure.unexpected_error
         return msg
     end
 
-    if (failure.unexpected_error ~= nil) then
-        msg = "unexpected failure on line " .. failure.line_num .. ": " .. failure.unexpected_error
+    if (failure.line_num == nil) then
+        msg = "unexpected failure: bad argument passed to expect-function"
         return msg
     end
 

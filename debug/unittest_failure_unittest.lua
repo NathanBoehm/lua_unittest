@@ -306,6 +306,9 @@ tests.verify_false = function ()
     expect_false(true)
 end
 
+tests.unexpected_failure = function ()
+    expect_true(error("lmao no"))
+end
 
 
 start()
