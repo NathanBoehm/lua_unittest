@@ -1,18 +1,23 @@
-#lua_unittest
-A simple, googletest inspired unit-testing framework for lua modules, designed to be run from a terminal.
+# lua_unittest
+A simple, googletest inspired unit-testing framework for lua modules, designed to be run from a terminal and provide detailed feedback on test failures.
 
-#Usage
+# Usage
 To begin using, put 
 `require 'unittest'`
 followed by
 `load_modules('<name of module to test here>', ...)`
+after you have defined your tests put
+`run_all_tests()` or `start()` at the bottom to run the tests
 
-in your unittesting file. Unit tests are created by adding functions to the 'tests' table in the unittest.lua module. Inside each of these functions you can make use of the various expect/assert functions provided.
-###note 
-see 'unittest_unittest.lua' under debug for a more extensive example.
+in your unittesting file. Unit tests are created by adding functions to the 'tests' table in the unittest.lua module. Inside each of these functions you can make use of the various expect/assert functions provided. Run the file by calling dofile("path to your file") in the terminal.
+### note 
+1. see 'unittest_unittest.lua' under debug for a more extensive example.
+2. you may need to set your package.path to the location of the unittest.lua module
 
-##Example
+## Example
 ```lua
+package.path = "..."
+
 require 'unittest'
 load_modules('my_module.lua')
 
@@ -24,9 +29,11 @@ function my_test_two()
 	assert_lt(return_one(), 2)
 end
 add_test("second test", my_test_two())
+
+start()
 ```
 
-#Testing Functions
+# Testing Functions
 There are two versions of every testing function and expect\_<> and an assert\_<>. An assert will immeadiately end the test and log the result on a failure, an expect will log the result but continue with the test.
 
 
@@ -51,8 +58,8 @@ There are two versions of every testing function and expect\_<> and an assert\_<
 | expect_true(expression) | expression: boolean | Tests that 'expression' evaluates to true. |
 | expect_false(expression) | expression: boolean | Tests that 'expression' evaluates to false. |
 
-###note
+### note
 in the case of tables, equality means both tables contain the same key-value pairs.
 
-##misc
+## misc
 `add_test(name, test)` where 'name' is a string and 'test' is a function is also provided as an optional way to add a test
